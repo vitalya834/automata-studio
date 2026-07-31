@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0",
+  "id": "initial-state-undeclared",
+  "name": "InitialStateUndeclared",
+  "description": "Invalid: initial configuration points at undeclared state `nowhere` (initial-configuration family).",
+  "modelKind": "mealy",
+  "semanticProfile": "deterministic.partial",
+  "inputAlphabet": { "symbols": [{ "id": "x" }] },
+  "outputAlphabet": { "symbols": [{ "id": "o" }] },
+  "states": [{ "id": "a" }],
+  "transitions": [],
+  "initial": { "stateId": "nowhere" },
+  "provenance": {
+    "createdBy": "manual",
+    "sourceFormat": "handwritten",
+    "timestamp": "2026-07-31T12:00:00Z"
+  }
+}

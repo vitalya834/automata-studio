@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0",
+  "id": "missing-time-unit",
+  "name": "MissingTimeUnit",
+  "description": "Invalid: tfsm without a declared timeUnit — implicit units are forbidden (units family).",
+  "modelKind": "tfsm",
+  "semanticProfile": "deterministic.partial",
+  "timingProfile": "timeouts",
+  "inputAlphabet": { "symbols": [{ "id": "x" }] },
+  "outputAlphabet": { "symbols": [{ "id": "o" }] },
+  "states": [
+    { "id": "a", "timeout": { "after": 10, "to": "a" } }
+  ],
+  "transitions": [{ "id": "t1", "from": "a", "to": "a", "input": "x", "output": "o" }],
+  "initial": { "stateId": "a" },
+  "provenance": {
+    "createdBy": "manual",
+    "sourceFormat": "handwritten",
+    "timestamp": "2026-07-31T12:00:00Z"
+  }
+}

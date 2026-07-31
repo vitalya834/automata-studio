@@ -11,6 +11,8 @@
     "cpp:test": "powershell -ExecutionPolicy Bypass -File scripts/build-cpp.ps1 -Test"
   },
   "devDependencies": {
+    "@types/node": "^26.1.2",
+    "ajv": "^8.20.0",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vitest": "^3.1.4"

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0",
+  "id": "clock-reset-undeclared",
+  "name": "ClockResetUndeclared",
+  "description": "Invalid: edge resets undeclared clock `z` (clock-reference family).",
+  "modelKind": "tfsm",
+  "semanticProfile": "deterministic.partial",
+  "timingProfile": "alurDill",
+  "timeUnit": "ticks",
+  "inputAlphabet": { "symbols": [{ "id": "a" }] },
+  "outputAlphabet": { "symbols": [] },
+  "clocks": [{ "name": "x" }],
+  "states": [{ "id": "l0" }],
+  "transitions": [
+    { "id": "e1", "from": "l0", "to": "l0", "input": "a", "resets": ["z"] }
+  ],
+  "initial": { "stateId": "l0" },
+  "provenance": {
+    "createdBy": "manual",
+    "sourceFormat": "handwritten",
+    "timestamp": "2026-07-31T12:00:00Z"
+  }
+}

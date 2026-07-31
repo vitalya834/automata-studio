@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0",
+  "id": "tfsm-alur-dill-two-clocks",
+  "name": "AlurDillTwoClocks",
+  "description": "Alur-Dill timed automaton with two clocks: b must follow a within 2 units (clock x), and the whole cycle must finish before y reaches 10.",
+  "modelKind": "tfsm",
+  "semanticProfile": "nondeterministic.partial",
+  "timingProfile": "alurDill",
+  "timeUnit": "ticks",
+  "inputAlphabet": {
+    "symbols": [{ "id": "a" }, { "id": "b" }, { "id": "c" }]
+  },
+  "outputAlphabet": {
+    "symbols": []
+  },
+  "clocks": [
+    { "name": "x", "description": "Time since the last a." },
+    { "name": "y", "description": "Time since the cycle started." }
+  ],
+  "states": [
+    { "id": "l0" },
+    { "id": "l1", "invariant": [{ "clock": "x", "op": "<=", "value": 2 }] },
+    { "id": "l2", "invariant": [{ "clock": "y", "op": "<", "value": 10 }] }
+  ],
+  "transitions": [
+    {
+      "id": "e1",
+      "from": "l0",
+      "to": "l1",
+      "input": "a",
+      "resets": ["x", "y"]
+    },
+    {
+      "id": "e2",
+      "from": "l1",
+      "to": "l2",
+      "input": "b",
+      "guard": [{ "clock": "x", "op": "<=", "value": 2 }],
+      "resets": []
+    },
+    {
+      "id": "e3",
+      "from": "l2",
+      "to": "l0",
+      "input": "c",
+      "guard": [
+        { "clock": "y", "op": "<", "value": 10 },
+        { "clock": "x", "op": ">=", "value": 1 }
+      ],
+      "resets": ["x"]
+    }
+  ],
+  "initial": { "stateId": "l0" },
+  "provenance": {
+    "createdBy": "manual",
+    "sourceFormat": "handwritten",
+    "timestamp": "2026-07-31T12:00:00Z"
+  }
+}
