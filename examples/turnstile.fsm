@@ -1,0 +1,10 @@
+# Турникет Мили: вход / выход
+machine Turnstile
+state Locked
+state Unlocked
+initial Locked
+
+Locked --coin / unlock--> Unlocked
+Locked --push / alarm--> Locked
+Unlocked --push / lock--> Locked
+Unlocked --coin / return--> Unlocked

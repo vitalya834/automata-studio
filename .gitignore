@@ -1,4 +1,6 @@
 node_modules/
 dist/
+build-cpp/
 *.log
+/*.exe
 .DS_Store

@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "cpp:build": "powershell -ExecutionPolicy Bypass -File scripts/build-cpp.ps1",
+    "cpp:test": "powershell -ExecutionPolicy Bypass -File scripts/build-cpp.ps1 -Test"
   },
   "devDependencies": {
     "typescript": "^5.8.3",
