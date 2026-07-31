@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0",
+  "id": "moore-traffic-light",
+  "name": "TrafficLight",
+  "description": "Deterministic Moore traffic light; every state carries its lamp output.",
+  "modelKind": "moore",
+  "semanticProfile": "deterministic.complete",
+  "inputAlphabet": {
+    "symbols": [{ "id": "tick" }]
+  },
+  "outputAlphabet": {
+    "symbols": [{ "id": "red" }, { "id": "yellow" }, { "id": "green" }]
+  },
+  "states": [
+    { "id": "stop", "output": "red" },
+    { "id": "ready", "output": "yellow" },
+    { "id": "go", "output": "green" }
+  ],
+  "transitions": [
+    { "id": "t1", "from": "stop", "to": "ready", "input": "tick" },
+    { "id": "t2", "from": "ready", "to": "go", "input": "tick" },
+    { "id": "t3", "from": "go", "to": "stop", "input": "tick" }
+  ],
+  "initial": { "stateId": "stop" },
+  "provenance": {
+    "createdBy": "manual",
+    "sourceFormat": "handwritten",
+    "timestamp": "2026-07-31T12:00:00Z"
+  }
+}

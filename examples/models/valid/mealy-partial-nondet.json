@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0",
+  "id": "mealy-partial-nondet",
+  "name": "NondeterministicPartialMealy",
+  "description": "Nondeterministic partial Mealy machine: state a has two transitions on x and no transition on y.",
+  "modelKind": "mealy",
+  "semanticProfile": "nondeterministic.partial",
+  "inputAlphabet": {
+    "symbols": [{ "id": "x" }, { "id": "y" }]
+  },
+  "outputAlphabet": {
+    "symbols": [{ "id": "o1" }, { "id": "o2" }]
+  },
+  "states": [{ "id": "a" }, { "id": "b" }],
+  "transitions": [
+    { "id": "t1", "from": "a", "to": "a", "input": "x", "output": "o1" },
+    { "id": "t2", "from": "a", "to": "b", "input": "x", "output": "o2" },
+    { "id": "t3", "from": "b", "to": "a", "input": "y", "output": "o1" }
+  ],
+  "initial": { "stateId": "a" },
+  "provenance": {
+    "createdBy": "generator",
+    "createdByVersion": "0.2.0",
+    "sourceFormat": "seeded-random",
+    "seed": 42,
+    "timestamp": "2026-07-31T12:00:00Z"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0",
+  "id": "tfsm-timed-guards-door",
+  "name": "DoorWithTimedGuards",
+  "description": "TFSM (timedGuards profile): a second badge swipe only opens the door if it arrives within (0, 5] after entering armed.",
+  "modelKind": "tfsm",
+  "semanticProfile": "deterministic.partial",
+  "timingProfile": "timedGuards",
+  "timeUnit": "s",
+  "inputAlphabet": {
+    "symbols": [{ "id": "badge" }]
+  },
+  "outputAlphabet": {
+    "symbols": [{ "id": "armed" }, { "id": "open" }]
+  },
+  "states": [{ "id": "closed" }, { "id": "waiting" }, { "id": "opened" }],
+  "transitions": [
+    { "id": "t1", "from": "closed", "to": "waiting", "input": "badge", "output": "armed" },
+    {
+      "id": "t2",
+      "from": "waiting",
+      "to": "opened",
+      "input": "badge",
+      "output": "open",
+      "timedGuard": {
+        "lower": { "value": 0, "inclusive": false },
+        "upper": { "value": 5, "inclusive": true }
+      }
+    },
+    {
+      "id": "t3",
+      "from": "waiting",
+      "to": "closed",
+      "input": "badge",
+      "output": "armed",
+      "timedGuard": {
+        "lower": { "value": 5, "inclusive": false },
+        "upper": { "unbounded": true }
+      }
+    }
+  ],
+  "initial": { "stateId": "closed" },
+  "provenance": {
+    "createdBy": "manual",
+    "sourceFormat": "handwritten",
+    "timestamp": "2026-07-31T12:00:00Z"
+  }
+}

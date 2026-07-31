@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0",
+  "id": "moore-transition-output",
+  "name": "MooreTransitionOutput",
+  "description": "Invalid: a moore transition carries an output, which belongs to states (output-exclusivity family).",
+  "modelKind": "moore",
+  "semanticProfile": "deterministic.partial",
+  "inputAlphabet": { "symbols": [{ "id": "x" }] },
+  "outputAlphabet": { "symbols": [{ "id": "red" }, { "id": "green" }] },
+  "states": [
+    { "id": "a", "output": "red" },
+    { "id": "b", "output": "green" }
+  ],
+  "transitions": [
+    { "id": "t1", "from": "a", "to": "b", "input": "x", "output": "green" }
+  ],
+  "initial": { "stateId": "a" },
+  "provenance": {
+    "createdBy": "manual",
+    "sourceFormat": "handwritten",
+    "timestamp": "2026-07-31T12:00:00Z"
+  }
+}

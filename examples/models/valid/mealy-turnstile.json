@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0",
+  "id": "mealy-turnstile",
+  "name": "Turnstile",
+  "description": "Deterministic complete Mealy turnstile: coin unlocks, push locks.",
+  "modelKind": "mealy",
+  "semanticProfile": "deterministic.complete",
+  "inputAlphabet": {
+    "symbols": [{ "id": "coin" }, { "id": "push" }]
+  },
+  "outputAlphabet": {
+    "symbols": [{ "id": "unlock" }, { "id": "lock" }, { "id": "none" }]
+  },
+  "states": [
+    { "id": "locked", "name": "Locked" },
+    { "id": "unlocked", "name": "Unlocked" }
+  ],
+  "transitions": [
+    { "id": "t1", "from": "locked", "to": "unlocked", "input": "coin", "output": "unlock" },
+    { "id": "t2", "from": "locked", "to": "locked", "input": "push", "output": "none" },
+    { "id": "t3", "from": "unlocked", "to": "locked", "input": "push", "output": "lock" },
+    { "id": "t4", "from": "unlocked", "to": "unlocked", "input": "coin", "output": "none" }
+  ],
+  "initial": { "stateId": "locked" },
+  "provenance": {
+    "createdBy": "manual",
+    "sourceFormat": "handwritten",
+    "timestamp": "2026-07-31T12:00:00Z"
+  },
+  "presentation": {
+    "positions": {
+      "locked": { "x": 80, "y": 120 },
+      "unlocked": { "x": 320, "y": 120 }
+    }
+  }
+}
