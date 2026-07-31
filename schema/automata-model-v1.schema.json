@@ -1,0 +1,645 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/vitalya834/automata-studio/schema/automata-model-v1.schema.json",
+  "title": "Automata Studio Canonical Model IR v1",
+  "description": "Canonical, versioned interchange model for Mealy, Moore, EFSM and TFSM machines. Structural rules only; cross-reference rules (unique IDs, declared references, initial configuration consistency) are enforced by the runtime validator in src/model-ir.ts.",
+  "oneOf": [
+    { "$ref": "#/$defs/mealyModel" },
+    { "$ref": "#/$defs/mooreModel" },
+    { "$ref": "#/$defs/efsmModel" },
+    { "$ref": "#/$defs/tfsmModel" }
+  ],
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[\\p{L}\\p{N}_][\\p{L}\\p{N}_.-]*$",
+      "maxLength": 128
+    },
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "semanticProfile": {
+      "enum": [
+        "deterministic.complete",
+        "deterministic.partial",
+        "nondeterministic.complete",
+        "nondeterministic.partial"
+      ]
+    },
+    "dataType": {
+      "enum": ["bool", "int", "real", "string"]
+    },
+    "timeUnit": {
+      "enum": ["ns", "us", "ms", "s", "min", "h", "ticks"]
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "createdBy": { "$ref": "#/$defs/nonEmptyString" },
+        "createdByVersion": { "$ref": "#/$defs/nonEmptyString" },
+        "sourceFormat": { "$ref": "#/$defs/nonEmptyString" },
+        "seed": { "type": ["integer", "string"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["createdBy", "sourceFormat", "timestamp"],
+      "additionalProperties": false
+    },
+    "extensions": {
+      "type": "object",
+      "patternProperties": {
+        "^x-[\\p{L}\\p{N}_][\\p{L}\\p{N}_.-]*$": true
+      },
+      "additionalProperties": false
+    },
+    "presentation": {
+      "type": "object",
+      "properties": {
+        "positions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" }
+            },
+            "required": ["x", "y"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "plainSymbol": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "description": { "type": "string" }
+      },
+      "required": ["id"],
+      "additionalProperties": false
+    },
+    "paramSymbol": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "description": { "type": "string" },
+        "params": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "$ref": "#/$defs/identifier" },
+              "type": { "$ref": "#/$defs/dataType" }
+            },
+            "required": ["name", "type"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["id"],
+      "additionalProperties": false
+    },
+    "plainAlphabet": {
+      "type": "object",
+      "properties": {
+        "symbols": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/plainSymbol" }
+        }
+      },
+      "required": ["symbols"],
+      "additionalProperties": false
+    },
+    "paramAlphabet": {
+      "type": "object",
+      "properties": {
+        "symbols": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/paramSymbol" }
+        }
+      },
+      "required": ["symbols"],
+      "additionalProperties": false
+    },
+    "plainState": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "name": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "required": ["id"],
+      "additionalProperties": false
+    },
+    "mooreState": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "output": { "$ref": "#/$defs/identifier" }
+      },
+      "required": ["id", "output"],
+      "additionalProperties": false
+    },
+    "initialConfiguration": {
+      "type": "object",
+      "properties": {
+        "stateId": { "$ref": "#/$defs/identifier" }
+      },
+      "required": ["stateId"],
+      "additionalProperties": false
+    },
+    "efsmInitialConfiguration": {
+      "type": "object",
+      "properties": {
+        "stateId": { "$ref": "#/$defs/identifier" },
+        "variableValues": {
+          "type": "object",
+          "additionalProperties": {
+            "type": ["boolean", "number", "string"]
+          }
+        }
+      },
+      "required": ["stateId", "variableValues"],
+      "additionalProperties": false
+    },
+    "expression": {
+      "type": "object",
+      "properties": {
+        "language": { "$ref": "#/$defs/nonEmptyString" },
+        "text": { "$ref": "#/$defs/nonEmptyString" }
+      },
+      "required": ["language", "text"],
+      "additionalProperties": false
+    },
+    "update": {
+      "type": "object",
+      "properties": {
+        "target": { "$ref": "#/$defs/identifier" },
+        "language": { "$ref": "#/$defs/nonEmptyString" },
+        "text": { "$ref": "#/$defs/nonEmptyString" }
+      },
+      "required": ["target", "language", "text"],
+      "additionalProperties": false
+    },
+    "finiteEndpoint": {
+      "type": "object",
+      "properties": {
+        "value": { "type": "number", "minimum": 0 },
+        "inclusive": { "type": "boolean" }
+      },
+      "required": ["value", "inclusive"],
+      "additionalProperties": false
+    },
+    "infiniteEndpoint": {
+      "type": "object",
+      "properties": {
+        "unbounded": { "const": true }
+      },
+      "required": ["unbounded"],
+      "additionalProperties": false
+    },
+    "timeInterval": {
+      "type": "object",
+      "properties": {
+        "lower": { "$ref": "#/$defs/finiteEndpoint" },
+        "upper": {
+          "oneOf": [
+            { "$ref": "#/$defs/finiteEndpoint" },
+            { "$ref": "#/$defs/infiniteEndpoint" }
+          ]
+        }
+      },
+      "required": ["lower", "upper"],
+      "additionalProperties": false
+    },
+    "outputDelay": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "constant" },
+            "value": { "type": "number", "minimum": 0 }
+          },
+          "required": ["kind", "value"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "interval" },
+            "interval": { "$ref": "#/$defs/timeInterval" }
+          },
+          "required": ["kind", "interval"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "linearFamily" },
+            "base": { "type": "number", "minimum": 0 },
+            "slope": { "type": "number" }
+          },
+          "required": ["kind", "base", "slope"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "timeout": {
+      "type": "object",
+      "properties": {
+        "after": { "type": "number", "exclusiveMinimum": 0 },
+        "to": { "$ref": "#/$defs/identifier" }
+      },
+      "required": ["after", "to"],
+      "additionalProperties": false
+    },
+    "clock": {
+      "type": "object",
+      "properties": {
+        "name": { "$ref": "#/$defs/identifier" },
+        "description": { "type": "string" }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+    "clockConstraint": {
+      "type": "object",
+      "properties": {
+        "clock": { "$ref": "#/$defs/identifier" },
+        "op": { "enum": ["<", "<=", "==", ">=", ">"] },
+        "value": { "type": "number", "minimum": 0 }
+      },
+      "required": ["clock", "op", "value"],
+      "additionalProperties": false
+    },
+    "alurDillLocation": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "invariant": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/clockConstraint" }
+        }
+      },
+      "required": ["id"],
+      "additionalProperties": false
+    },
+    "mealyTransition": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "from": { "$ref": "#/$defs/identifier" },
+        "to": { "$ref": "#/$defs/identifier" },
+        "input": { "$ref": "#/$defs/identifier" },
+        "output": { "$ref": "#/$defs/identifier" }
+      },
+      "required": ["id", "from", "to", "input", "output"],
+      "additionalProperties": false
+    },
+    "mooreTransition": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "from": { "$ref": "#/$defs/identifier" },
+        "to": { "$ref": "#/$defs/identifier" },
+        "input": { "$ref": "#/$defs/identifier" }
+      },
+      "required": ["id", "from", "to", "input"],
+      "additionalProperties": false
+    },
+    "efsmTransition": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "from": { "$ref": "#/$defs/identifier" },
+        "to": { "$ref": "#/$defs/identifier" },
+        "input": { "$ref": "#/$defs/identifier" },
+        "output": { "$ref": "#/$defs/identifier" },
+        "guard": { "$ref": "#/$defs/expression" },
+        "updates": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/update" }
+        }
+      },
+      "required": ["id", "from", "to", "input"],
+      "additionalProperties": false
+    },
+    "tfsmTransition": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "from": { "$ref": "#/$defs/identifier" },
+        "to": { "$ref": "#/$defs/identifier" },
+        "input": { "$ref": "#/$defs/identifier" },
+        "output": { "$ref": "#/$defs/identifier" },
+        "timedGuard": { "$ref": "#/$defs/timeInterval" },
+        "outputDelay": { "$ref": "#/$defs/outputDelay" }
+      },
+      "required": ["id", "from", "to", "input", "output"],
+      "additionalProperties": false
+    },
+    "tfsmState": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "timeout": { "$ref": "#/$defs/timeout" }
+      },
+      "required": ["id"],
+      "additionalProperties": false
+    },
+    "alurDillTransition": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "from": { "$ref": "#/$defs/identifier" },
+        "to": { "$ref": "#/$defs/identifier" },
+        "input": { "$ref": "#/$defs/identifier" },
+        "guard": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/clockConstraint" }
+        },
+        "resets": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/identifier" }
+        }
+      },
+      "required": ["id", "from", "to", "input", "resets"],
+      "additionalProperties": false
+    },
+    "mealyModel": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": { "$ref": "#/$defs/schemaVersion" },
+        "id": { "$ref": "#/$defs/identifier" },
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "description": { "type": "string" },
+        "modelKind": { "const": "mealy" },
+        "semanticProfile": { "$ref": "#/$defs/semanticProfile" },
+        "inputAlphabet": { "$ref": "#/$defs/plainAlphabet" },
+        "outputAlphabet": { "$ref": "#/$defs/plainAlphabet" },
+        "states": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/plainState" }
+        },
+        "transitions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/mealyTransition" }
+        },
+        "initial": { "$ref": "#/$defs/initialConfiguration" },
+        "provenance": { "$ref": "#/$defs/provenance" },
+        "extensions": { "$ref": "#/$defs/extensions" },
+        "presentation": { "$ref": "#/$defs/presentation" }
+      },
+      "required": [
+        "schemaVersion",
+        "id",
+        "name",
+        "modelKind",
+        "semanticProfile",
+        "inputAlphabet",
+        "outputAlphabet",
+        "states",
+        "transitions",
+        "initial",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "mooreModel": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": { "$ref": "#/$defs/schemaVersion" },
+        "id": { "$ref": "#/$defs/identifier" },
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "description": { "type": "string" },
+        "modelKind": { "const": "moore" },
+        "semanticProfile": { "$ref": "#/$defs/semanticProfile" },
+        "inputAlphabet": { "$ref": "#/$defs/plainAlphabet" },
+        "outputAlphabet": { "$ref": "#/$defs/plainAlphabet" },
+        "states": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/mooreState" }
+        },
+        "transitions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/mooreTransition" }
+        },
+        "initial": { "$ref": "#/$defs/initialConfiguration" },
+        "provenance": { "$ref": "#/$defs/provenance" },
+        "extensions": { "$ref": "#/$defs/extensions" },
+        "presentation": { "$ref": "#/$defs/presentation" }
+      },
+      "required": [
+        "schemaVersion",
+        "id",
+        "name",
+        "modelKind",
+        "semanticProfile",
+        "inputAlphabet",
+        "outputAlphabet",
+        "states",
+        "transitions",
+        "initial",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "efsmModel": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": { "$ref": "#/$defs/schemaVersion" },
+        "id": { "$ref": "#/$defs/identifier" },
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "description": { "type": "string" },
+        "modelKind": { "const": "efsm" },
+        "semanticProfile": { "$ref": "#/$defs/semanticProfile" },
+        "inputAlphabet": { "$ref": "#/$defs/paramAlphabet" },
+        "outputAlphabet": { "$ref": "#/$defs/paramAlphabet" },
+        "variables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "$ref": "#/$defs/identifier" },
+              "type": { "$ref": "#/$defs/dataType" },
+              "description": { "type": "string" }
+            },
+            "required": ["name", "type"],
+            "additionalProperties": false
+          }
+        },
+        "states": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/plainState" }
+        },
+        "transitions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/efsmTransition" }
+        },
+        "initial": { "$ref": "#/$defs/efsmInitialConfiguration" },
+        "provenance": { "$ref": "#/$defs/provenance" },
+        "extensions": { "$ref": "#/$defs/extensions" },
+        "presentation": { "$ref": "#/$defs/presentation" }
+      },
+      "required": [
+        "schemaVersion",
+        "id",
+        "name",
+        "modelKind",
+        "semanticProfile",
+        "inputAlphabet",
+        "outputAlphabet",
+        "variables",
+        "states",
+        "transitions",
+        "initial",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "tfsmModel": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": { "$ref": "#/$defs/schemaVersion" },
+        "id": { "$ref": "#/$defs/identifier" },
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "description": { "type": "string" },
+        "modelKind": { "const": "tfsm" },
+        "semanticProfile": { "$ref": "#/$defs/semanticProfile" },
+        "timingProfile": {
+          "enum": [
+            "timedGuards",
+            "timeouts",
+            "outputDelays",
+            "timeoutsAndOutputDelays",
+            "alurDill"
+          ]
+        },
+        "timeUnit": { "$ref": "#/$defs/timeUnit" },
+        "inputAlphabet": { "$ref": "#/$defs/plainAlphabet" },
+        "outputAlphabet": { "$ref": "#/$defs/plainAlphabet" },
+        "clocks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/clock" }
+        },
+        "states": { "type": "array", "minItems": 1 },
+        "transitions": { "type": "array" },
+        "initial": { "$ref": "#/$defs/initialConfiguration" },
+        "provenance": { "$ref": "#/$defs/provenance" },
+        "extensions": { "$ref": "#/$defs/extensions" },
+        "presentation": { "$ref": "#/$defs/presentation" }
+      },
+      "required": [
+        "schemaVersion",
+        "id",
+        "name",
+        "modelKind",
+        "semanticProfile",
+        "timingProfile",
+        "timeUnit",
+        "inputAlphabet",
+        "outputAlphabet",
+        "states",
+        "transitions",
+        "initial",
+        "provenance"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "timingProfile": { "const": "timedGuards" } }, "required": ["timingProfile"] },
+          "then": {
+            "properties": {
+              "states": { "items": { "$ref": "#/$defs/plainState" } },
+              "transitions": { "items": { "$ref": "#/$defs/tfsmTransition" } }
+            },
+            "not": { "required": ["clocks"] },
+            "allOf": [
+              {
+                "properties": {
+                  "transitions": { "items": { "not": { "required": ["outputDelay"] } } }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": { "properties": { "timingProfile": { "const": "timeouts" } }, "required": ["timingProfile"] },
+          "then": {
+            "properties": {
+              "states": { "items": { "$ref": "#/$defs/tfsmState" } },
+              "transitions": {
+                "items": {
+                  "allOf": [
+                    { "$ref": "#/$defs/tfsmTransition" },
+                    { "not": { "required": ["timedGuard"] } },
+                    { "not": { "required": ["outputDelay"] } }
+                  ]
+                }
+              }
+            },
+            "not": { "required": ["clocks"] }
+          }
+        },
+        {
+          "if": { "properties": { "timingProfile": { "const": "outputDelays" } }, "required": ["timingProfile"] },
+          "then": {
+            "properties": {
+              "states": { "items": { "$ref": "#/$defs/plainState" } },
+              "transitions": {
+                "items": {
+                  "allOf": [
+                    { "$ref": "#/$defs/tfsmTransition" },
+                    { "not": { "required": ["timedGuard"] } }
+                  ]
+                }
+              }
+            },
+            "not": { "required": ["clocks"] }
+          }
+        },
+        {
+          "if": { "properties": { "timingProfile": { "const": "timeoutsAndOutputDelays" } }, "required": ["timingProfile"] },
+          "then": {
+            "properties": {
+              "states": { "items": { "$ref": "#/$defs/tfsmState" } },
+              "transitions": {
+                "items": {
+                  "allOf": [
+                    { "$ref": "#/$defs/tfsmTransition" },
+                    { "not": { "required": ["timedGuard"] } }
+                  ]
+                }
+              }
+            },
+            "not": { "required": ["clocks"] }
+          }
+        },
+        {
+          "if": { "properties": { "timingProfile": { "const": "alurDill" } }, "required": ["timingProfile"] },
+          "then": {
+            "properties": {
+              "states": { "items": { "$ref": "#/$defs/alurDillLocation" } },
+              "transitions": { "items": { "$ref": "#/$defs/alurDillTransition" } }
+            },
+            "required": ["clocks"]
+          }
+        }
+      ]
+    }
+  }
+}
