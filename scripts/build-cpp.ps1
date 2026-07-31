@@ -27,6 +27,17 @@ try {
             & '.\build-cpp\fsm-tests.exe'
             $resultCode = $LASTEXITCODE
         }
+        if ($resultCode -eq 0) {
+            & $compiler -std=c++20 -Wall -Wextra -pedantic `
+                '.\cpp\fsm.cpp' '.\cpp\runner.cpp' '.\cpp\test_runner.cpp' -I '.\cpp' `
+                -static -static-libgcc -static-libstdc++ `
+                -o '.\build-cpp\runner-tests.exe'
+            $resultCode = $LASTEXITCODE
+        }
+        if ($resultCode -eq 0) {
+            & '.\build-cpp\runner-tests.exe'
+            $resultCode = $LASTEXITCODE
+        }
     } else {
         & $compiler -std=c++20 -Wall -Wextra -pedantic `
             '.\cpp\fsm.cpp' '.\cpp\main.cpp' -I '.\cpp' `

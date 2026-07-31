@@ -5,25 +5,28 @@
 Repository: `vitalya834/automata-studio`.
 
 Automata Studio is a C++/TypeScript model-based testing platform. The current
-v0.2 implements Mealy FSM parsing, legacy `.fsm`, deterministic seeded
-generation, analysis and transition-cover tests. Your task is the next isolated
-layer: a canonical, versioned interchange model. Do not redesign the UI or the
-existing algorithms.
+v0.3 implements Mealy FSM parsing, legacy `.fsm`, deterministic seeded
+generation, analysis, transition-cover tests, Test Plan IR 1.0 and an in-memory
+runner in TypeScript and C++. Your task is the next isolated layer: a canonical,
+versioned Model IR. Do not redesign the UI, Test Plan IR or existing algorithms.
 
 ## Branch and ownership
 
-Create branch `claude/model-ir-v1` from the latest `main`.
+Create branch `claude/model-ir-v1` from `agent/test-runner-v03` after that
+branch is pushed. If PR #1 and the v0.3 PR have already been merged, use the
+latest `main` instead.
 
 Own only:
 
-- `schema/**`
+- `schema/automata-model-v1.schema.json`
 - `src/model-ir.ts`
 - `src/model-ir.test.ts`
 - `examples/models/**`
 - `docs/model-ir/**`
 
-Do not modify `src/main.ts`, `src/style.css` or C++ files. If integration needs
-changes to `src/fsm.ts`, describe them in the handoff instead of editing it.
+Do not modify `schema/automata-test-plan-v1.schema.json`, `src/testing.ts`,
+`src/main.ts`, `src/style.css` or C++ files. If integration needs changes to
+`src/fsm.ts`, describe them in the handoff instead of editing it.
 
 ## Deliverables
 

@@ -5,9 +5,22 @@ generates finite-state models from reproducible constraints, imports the legacy
 `.fsm` format, validates machine properties, synthesizes transition-cover test
 suites and presents models and tests as graphs and structured JSON.
 
-The long-term product is a testing engine for software and devices. Graphs are
-views; formal model semantics, test oracles, reproducible execution and coverage
-evidence are the core.
+The product is a protocol-neutral testing engine for software, services,
+embedded systems and physical devices. Graphs are views; formal model
+semantics, test oracles, reproducible execution and coverage evidence are the
+core. Modbus is one future adapter, not the product boundary: the same abstract
+test plan can target a simulator, CLI process, HTTP service, CAN device or other
+SUT through an adapter.
+
+## v0.3 capabilities
+
+- versioned Test Plan IR with JSON Schema and stable serialization;
+- reusable asynchronous TypeScript runner with deadlines and cancellation;
+- matching synchronous C++20 runner contract and JSON output;
+- protocol-neutral SUT adapter interface and deterministic in-memory adapter;
+- manual browser execution with PASS/FAIL/TIMEOUT summaries and step traces;
+- JSON export for transition-cover plans;
+- sample plan plus TypeScript and C++ runner tests.
 
 ## v0.2 capabilities
 
@@ -58,6 +71,8 @@ After `npm run cpp:build`:
 
 - [Product architecture](docs/PRODUCT-ARCHITECTURE.md)
 - [Automata taxonomy](docs/AUTOMATA-TAXONOMY.md)
+- [Test execution architecture](docs/TEST-EXECUTION.md)
+- [Test Plan IR JSON Schema](schema/automata-test-plan-v1.schema.json)
 - [Next isolated task for Claude](docs/CLAUDE-NEXT-TASK.md)
 
 Obsidian project notes:

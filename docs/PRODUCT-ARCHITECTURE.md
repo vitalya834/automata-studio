@@ -55,6 +55,9 @@ model source/import
 - text and legacy `.fsm` parser;
 - reproducible generator;
 - structural analysis and transition cover;
+- versioned Test Plan IR and JSON Schema;
+- TypeScript and C++ execution cores with deterministic in-memory adapters;
+- manual execution, detailed traces and JSON export in the browser workbench;
 - C++ CLI plus TypeScript UI.
 
 ### Conformance FSM
@@ -104,4 +107,3 @@ model source/import
 - Transition coverage is not advertised as complete fault coverage.
 - Every generated model and test campaign records its seed and semantic profile.
 - Graph layout never changes model meaning.
-

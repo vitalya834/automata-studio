@@ -9,6 +9,14 @@ import {
   type Machine,
   type ParseResult,
 } from './fsm.ts';
+import {
+  InMemoryFsmAdapter,
+  runTestPlan,
+  serializeTestPlan,
+  transitionCoverToTestPlan,
+  type TestPlan,
+  type TestRunResult,
+} from './testing.ts';
 
 type TestCase = { inputs: string[]; outputs?: string[]; target?: string };
 
@@ -26,7 +34,7 @@ Unlocked --coin / return--> Unlocked`;
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <header class="topbar">
     <div class="brand"><span class="brand-mark">A</span><div><span class="eyebrow">AUTOMATA ENGINEERING WORKBENCH</span><h1>Automata Studio</h1></div></div>
-    <div class="header-actions"><span class="version">CORE / UI 0.2</span><button id="build" class="primary">Анализировать <kbd>Ctrl↵</kbd></button></div>
+    <div class="header-actions"><span class="version">CORE / UI 0.3</span><button id="build" class="primary">Анализировать <kbd>Ctrl↵</kbd></button></div>
   </header>
 
   <main>
@@ -67,8 +75,26 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div id="tests" class="test-list"><div class="empty-state">Тесты появятся после построения модели</div></div>
       </article>
     </section>
+    <section class="panel execution-panel" aria-labelledby="execution-title">
+      <div class="panel-title execution-title">
+        <div><span class="step">06</span><span id="execution-title">Execution</span><span class="adapter-status"><i></i> IN-MEMORY</span></div>
+        <div class="execution-actions">
+          <button id="export-tests" class="quiet action-button" disabled>Экспорт JSON</button>
+          <button id="run-tests" class="primary action-button" disabled>Запустить в симуляторе</button>
+        </div>
+      </div>
+      <div id="execution-message" class="execution-message">Постройте детерминированную модель, чтобы подготовить запуск.</div>
+      <div id="execution-summary" class="execution-summary" hidden>
+        <div class="result-card pass"><span>PASS</span><strong id="pass-count">0</strong></div>
+        <div class="result-card fail"><span>FAIL</span><strong id="fail-count">0</strong></div>
+        <div class="result-card timeout"><span>TIMEOUT</span><strong id="timeout-count">0</strong></div>
+        <div class="result-card duration"><span>DURATION</span><strong id="run-duration">0 ms</strong></div>
+      </div>
+      <div class="trace-head"><span>#</span><span>Вход</span><span>Ожидалось</span><span>Получено</span><span>Время</span><span>Verdict</span></div>
+      <div id="execution-trace" class="execution-trace"><div class="empty-state">Тесты запускаются только вручную</div></div>
+    </section>
   </main>
-  <footer><span>TEXT</span><i></i><span>MODEL</span><i></i><span>ANALYSIS</span><i></i><span>TESTS</span></footer>`;
+  <footer><span>TEXT</span><i></i><span>MODEL</span><i></i><span>ANALYSIS</span><i></i><span>TESTS</span><i></i><span>EXECUTION</span></footer>`;
 
 const $ = <T extends Element>(selector: string) => document.querySelector<T>(selector)!;
 const source = $<HTMLTextAreaElement>('#source');
@@ -78,6 +104,13 @@ const jsonOutput = $<HTMLPreElement>('#json-output');
 const machineName = $<HTMLSpanElement>('#machine-name');
 const analysisNode = $<HTMLDivElement>('#analysis');
 const testsNode = $<HTMLDivElement>('#tests');
+const executionMessage = $<HTMLDivElement>('#execution-message');
+const executionSummary = $<HTMLDivElement>('#execution-summary');
+const executionTrace = $<HTMLDivElement>('#execution-trace');
+const runTestsButton = $<HTMLButtonElement>('#run-tests');
+const exportTestsButton = $<HTMLButtonElement>('#export-tests');
+let executableMachine: Machine | undefined;
+let executablePlan: TestPlan | undefined;
 source.value = example;
 
 function escapeXml(value: unknown): string {
@@ -174,6 +207,81 @@ function renderTests(machine: Machine): void {
   testsNode.innerHTML = notices + rows;
 }
 
+function setExecutionMessage(message: string, state: 'neutral' | 'error' | 'success' | 'running' = 'neutral'): void {
+  executionMessage.textContent = message;
+  executionMessage.className = `execution-message${state === 'neutral' ? '' : ` ${state}`}`;
+}
+
+function resetExecution(message = 'Модель изменилась. Выполните анализ, чтобы подготовить новый запуск.', error = false): void {
+  executableMachine = undefined;
+  executablePlan = undefined;
+  runTestsButton.disabled = true;
+  exportTestsButton.disabled = true;
+  executionSummary.hidden = true;
+  executionTrace.innerHTML = '<div class="empty-state">Тесты запускаются только вручную</div>';
+  setExecutionMessage(message, error ? 'error' : 'neutral');
+}
+
+function prepareExecution(machine: Machine): void {
+  const analysis = analyzeMachine(machine);
+  if (!analysis.deterministic) {
+    resetExecution('Симулятор пока запускает только детерминированные FSM: устраните неоднозначные переходы.', true);
+    return;
+  }
+  const cover = generateTransitionCover(machine);
+  if (!cover.tests.length) {
+    resetExecution('В модели нет достижимых переходов для выполнения.', true);
+    return;
+  }
+  const safeId = machine.name.replace(/[^\p{L}\p{N}_-]+/gu, '-').replace(/^-+|-+$/g, '') || 'machine';
+  executableMachine = machine;
+  executablePlan = transitionCoverToTestPlan(cover, {
+    id: `${safeId}-transition-cover`,
+    name: `${machine.name} transition cover`,
+    modelId: machine.name,
+    timeoutMs: 1_000,
+    metadata: { adapter: 'in-memory', uiVersion: '0.3' },
+  });
+  runTestsButton.disabled = false;
+  exportTestsButton.disabled = false;
+  executionSummary.hidden = true;
+  executionTrace.innerHTML = '<div class="empty-state">Готово к ручному запуску</div>';
+  setExecutionMessage(`Подготовлено тестов: ${executablePlan.cases.length}. Адаптер не запущен.`, 'success');
+}
+
+function displayOutput(value: string | null | undefined): string {
+  return value === null || value === undefined ? '∅' : value;
+}
+
+function renderExecutionResult(result: TestRunResult): void {
+  $('#pass-count').textContent = String(result.counts.pass);
+  $('#fail-count').textContent = String(result.counts.fail + result.counts.invalid);
+  $('#timeout-count').textContent = String(result.counts.timeout);
+  $('#run-duration').textContent = `${Math.max(0, result.finishedAt - result.startedAt)} ms`;
+  executionSummary.hidden = false;
+  const rows = result.cases.flatMap((testCase, caseIndex) => testCase.steps.map((step) => {
+    const expected = step.allowedExpectedOutputs.map(displayOutput).join(' | ');
+    const actual = displayOutput(step.response?.output);
+    const duration = step.response?.durationMs ?? Math.max(0, step.finishedAt - step.startedAt);
+    return `<div class="trace-row" title="${escapeXml(step.message ?? testCase.message ?? testCase.name)}">
+      <span class="test-index">${String(caseIndex + 1).padStart(2, '0')}.${step.index + 1}</span>
+      <code>${escapeXml(step.input)}</code>
+      <code>${escapeXml(expected)}</code>
+      <code class="actual${step.verdict === 'pass' ? '' : ' mismatch'}">${escapeXml(actual)}</code>
+      <code>${duration} ms</code>
+      <span class="verdict ${escapeXml(step.verdict)}">${escapeXml(step.verdict.toUpperCase())}</span>
+    </div>`;
+  }));
+  executionTrace.innerHTML = rows.length ? rows.join('') : '<div class="empty-state">Выполнение не создало трассу шагов</div>';
+  const problemCount = result.counts.fail + result.counts.timeout + result.counts.invalid + result.counts.inconclusive;
+  setExecutionMessage(
+    problemCount === 0
+      ? `Запуск завершён: ${result.counts.pass} тестов пройдено.`
+      : `Запуск завершён с проблемами: ${problemCount}. Общий verdict: ${result.verdict.toUpperCase()}.`,
+    problemCount === 0 ? 'success' : 'error',
+  );
+}
+
 function parseSource(forceLegacy = false): ParseResult {
   if (forceLegacy) return parseLegacyFsm(source.value);
   const result = parseMachine(source.value);
@@ -197,6 +305,7 @@ function build(forceLegacy = false): void {
     graph.innerHTML = '<text class="empty" x="380" y="260">Исправьте ошибки, чтобы построить граф</text>';
     analysisNode.innerHTML = '<div class="empty-state">Анализ недоступен</div>';
     testsNode.innerHTML = '<div class="empty-state">Тесты недоступны</div>';
+    resetExecution('Исправьте ошибки модели — запуск и экспорт сейчас недоступны.', true);
     return;
   }
   machineName.textContent = result.machine.name;
@@ -204,6 +313,13 @@ function build(forceLegacy = false): void {
   renderGraph(result.machine);
   renderAnalysis(result.machine);
   renderTests(result.machine);
+  if (!analyzeMachine(result.machine).deterministic) {
+    resetExecution('Симулятор пока запускает только детерминированные FSM: устраните неоднозначные переходы.', true);
+  } else if (result.diagnostics.some((item) => item.severity === 'error')) {
+    resetExecution('Модель содержит ошибки. Исправьте их перед запуском симулятора.', true);
+  } else {
+    prepareExecution(result.machine);
+  }
 }
 
 $('#build').addEventListener('click', () => build());
@@ -231,5 +347,38 @@ function setView(showGraph: boolean): void {
 }
 $('#view-graph').addEventListener('click', () => setView(true));
 $('#view-json').addEventListener('click', () => setView(false));
+runTestsButton.addEventListener('click', async () => {
+  if (!executableMachine || !executablePlan) return;
+  runTestsButton.disabled = true;
+  exportTestsButton.disabled = true;
+  executionSummary.hidden = true;
+  executionTrace.innerHTML = '<div class="empty-state">Выполнение тестов…</div>';
+  setExecutionMessage('IN-MEMORY адаптер выполняет тест-план…', 'running');
+  try {
+    const result = await runTestPlan(executablePlan, new InMemoryFsmAdapter(executableMachine));
+    renderExecutionResult(result);
+  } catch (error) {
+    executionTrace.innerHTML = '<div class="empty-state">Трасса недоступна</div>';
+    setExecutionMessage(`Не удалось выполнить тесты: ${error instanceof Error ? error.message : String(error)}`, 'error');
+  } finally {
+    runTestsButton.disabled = !executablePlan;
+    exportTestsButton.disabled = !executablePlan;
+  }
+});
+exportTestsButton.addEventListener('click', () => {
+  if (!executablePlan) return;
+  const blob = new Blob([serializeTestPlan(executablePlan)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${executablePlan.id}.json`;
+  link.hidden = true;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  setExecutionMessage(`Тест-план экспортирован: ${link.download}`, 'success');
+});
 source.addEventListener('keydown', (event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') build(); });
+source.addEventListener('input', () => resetExecution());
 build();
