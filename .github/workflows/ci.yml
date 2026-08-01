@@ -24,6 +24,13 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Set up MinGW C++
+        id: msys2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: mingw-w64-x86_64-gcc
+
       - name: Install dependencies
         run: npm ci
 
@@ -44,6 +51,10 @@ jobs:
 
       - name: Test C++ core and runner
         run: npm run cpp:test
+        env:
+          CXX: ${{ steps.msys2.outputs.msys2-location }}\mingw64\bin\g++.exe
 
       - name: Build C++ CLI
         run: npm run cpp:build
+        env:
+          CXX: ${{ steps.msys2.outputs.msys2-location }}\mingw64\bin\g++.exe
