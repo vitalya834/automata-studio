@@ -18,8 +18,16 @@ describe('runner CLI options', () => {
     ])).toEqual({
       kind: 'generate', modelPath: 'game.fsm', strategy: 'random-walk', outputPath: 'game-plan.json',
       cases: 40, maxSteps: 30, timeoutMs: 750, seed: 'game-2026',
+      maxImplementationStates: undefined, maxCases: 10_000,
     });
     expect(() => parseRunnerCliArgs(['generate', 'game.fsm'])).toThrow('--output');
+  });
+
+  it('parses standards-based conformance generation limits', () => {
+    expect(parseRunnerCliArgs([
+      'generate', 'controller.fsm', '--strategy', 'w', '--output', 'w-plan.json',
+      '--max-implementation-states', '6', '--max-cases', '2500',
+    ])).toMatchObject({ strategy: 'w', maxImplementationStates: 6, maxCases: 2500 });
   });
 
   it('parses a CLI process run without building a command string', () => {
