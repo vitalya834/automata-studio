@@ -6,10 +6,10 @@ Automata Studio v1.0 преобразует детерминированную D
 Test Plan IR, который выполняется через любой SUT-адаптер.
 
 ```powershell
-npm run cli -- generate examples/game-session.fsm `
+npm run cli -- generate examples/game-session.fsm -- `
   --strategy transition-cover --output game-plan.json
 
-npm run cli -- generate examples/game-session.fsm `
+npm run cli -- generate examples/game-session.fsm -- `
   --strategy random-walk --cases 50 --max-steps 25 `
   --seed game-2026 --timeout 1000 --output game-fuzz.json
 ```

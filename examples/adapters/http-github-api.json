@@ -1,0 +1,42 @@
+{
+  "baseUrl": "https://api.github.com",
+  "maxResponseBytes": 1048576,
+  "inputs": {
+    "read_visibility": {
+      "method": "GET",
+      "path": "/repos/vitalya834/automata-studio",
+      "headers": {
+        "accept": "application/vnd.github+json",
+        "user-agent": "automata-studio-v1"
+      },
+      "output": { "kind": "json-pointer", "pointer": "/visibility" }
+    },
+    "read_default_branch": {
+      "method": "GET",
+      "path": "/repos/vitalya834/automata-studio",
+      "headers": {
+        "accept": "application/vnd.github+json",
+        "user-agent": "automata-studio-v1"
+      },
+      "output": { "kind": "json-pointer", "pointer": "/default_branch" }
+    },
+    "read_license": {
+      "method": "GET",
+      "path": "/repos/vitalya834/automata-studio",
+      "headers": {
+        "accept": "application/vnd.github+json",
+        "user-agent": "automata-studio-v1"
+      },
+      "output": { "kind": "json-pointer", "pointer": "/license/spdx_id" }
+    },
+    "read_latest_release": {
+      "method": "GET",
+      "path": "/repos/vitalya834/automata-studio/releases/latest",
+      "headers": {
+        "accept": "application/vnd.github+json",
+        "user-agent": "automata-studio-v1"
+      },
+      "output": { "kind": "json-pointer", "pointer": "/tag_name" }
+    }
+  }
+}

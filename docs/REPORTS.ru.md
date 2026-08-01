@@ -9,7 +9,7 @@ Automata Studio преобразует один неизменяемый `TestRu
 ## CLI
 
 ```powershell
-npm run cli -- run plan.json --adapter cli --executable sut.exe `
+npm run cli -- run plan.json -- --adapter cli --executable sut.exe `
   --report result.json `
   --junit junit.xml `
   --html report.html

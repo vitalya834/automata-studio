@@ -50,6 +50,7 @@ Nothing is installed as a system service and no external device is contacted.
 | Test Modbus TCP behavior safely | `npm run demo:modbus` |
 | Generate random behavioral tests | [Test generation guide](docs/TEST-GENERATION.md) |
 | Test a REST or ML inference API | [HTTP adapter guide](docs/adapters/HTTP.md) |
+| Test a real external product | `npm run demo:github` |
 | Generate sequence-model data | [Dataset guide](docs/DATASET-GENERATION.md) |
 
 ## v1.0 product pipeline
@@ -195,12 +196,13 @@ After `npm run cpp:build`:
 ## External SUT runner
 
 ```powershell
-npm run cli -- generate examples/game-session.fsm --strategy transition-cover --output game-plan.json
-npm run cli -- generate examples/game-session.fsm --strategy random-walk --cases 50 --max-steps 25 --seed 2026 --output game-fuzz.json
+npm run cli -- generate examples/game-session.fsm -- --strategy transition-cover --output game-plan.json
+npm run cli -- generate examples/game-session.fsm -- --strategy random-walk --cases 50 --max-steps 25 --seed 2026 --output game-fuzz.json
 npm run cli -- validate examples/test-plans/turnstile-transition-cover.json
 npm run demo:cli
 npm run demo:modbus
 npm run demo:http
+npm run demo:github
 ```
 
 See [runner CLI documentation](docs/RUNNER-CLI.md) for external executables,
