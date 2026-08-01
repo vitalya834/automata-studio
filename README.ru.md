@@ -13,6 +13,17 @@ Automata Studio — гибридная C++/TypeScript-платформа мод�
 ядром продукта. Один абстрактный тест-план можно выполнять на симуляторе,
 CLI-процессе, HTTP-сервисе, Modbus/CAN-устройстве или другом SUT через адаптер.
 
+## Возможности v0.7
+
+- запускаемый Node.js runner: проверка планов, внешние SUT, text/JSON-трассы,
+  файлы отчётов и exit codes для CI;
+- настоящий Modbus TCP‑адаптер: FC1–FC6, MBAP transaction ID, фрагментация TCP
+  и отображение значений в абстрактные символы;
+- неразрушающий reset и обязательный `allowWrites: true` для любой записи;
+- loopback‑симулятор и сквозная демонстрация `npm run demo:modbus`;
+- строгая длина ответов, дедлайны, отмена и закрытие sockets;
+- Modbus‑адреса хранятся в адаптере, а Test Plan IR остаётся независимым.
+
 ## Возможности v0.6
 
 - Node.js-адаптер для тестирования внешних программ через строгий протокол
@@ -90,6 +101,7 @@ npm run cpp:build
 ```powershell
 npm run cli -- validate examples/test-plans/turnstile-transition-cover.json
 npm run demo:cli
+npm run demo:modbus
 ```
 
 Настройка executable, allowlist окружения, JSON и файлы отчётов описаны в
@@ -103,6 +115,7 @@ npm run demo:cli
 - [Архитектура выполнения тестов](docs/TEST-EXECUTION.ru.md)
 - [Временное тестирование](docs/TIMED-TESTING.ru.md)
 - [Runner CLI для внешних SUT](docs/RUNNER-CLI.ru.md)
+- [Modbus TCP‑адаптер](docs/adapters/MODBUS-TCP.ru.md)
 - [CLI Process SUT Adapter](docs/adapters/CLI-PROCESS.ru.md)
 
 Восстановленное Java-приложение 2010 года хранится вне репозитория в

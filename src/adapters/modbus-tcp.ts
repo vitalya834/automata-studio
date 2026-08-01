@@ -28,9 +28,9 @@ export type ModbusReadKind = 'readCoils' | 'readDiscreteInputs' | 'readHoldingRe
 export type ModbusWriteKind = 'writeSingleCoil' | 'writeSingleRegister';
 
 export type ModbusOperation =
-  | { kind: ModbusReadKind; address: number; quantity: number }
-  | { kind: 'writeSingleCoil'; address: number; value: boolean }
-  | { kind: 'writeSingleRegister'; address: number; value: number };
+  | { readonly kind: ModbusReadKind; readonly address: number; readonly quantity: number }
+  | { readonly kind: 'writeSingleCoil'; readonly address: number; readonly value: boolean }
+  | { readonly kind: 'writeSingleRegister'; readonly address: number; readonly value: number };
 
 /**
  * Predicate over the observed values of a read. Values are normalised to
@@ -42,12 +42,12 @@ export type OutputCondition =
   | { kind: 'valueAt'; index: number; equals?: number; min?: number; max?: number };
 
 export type OutputRule = {
-  symbol: OutputSymbol;
-  when: OutputCondition;
+  readonly symbol: OutputSymbol;
+  readonly when: OutputCondition;
 };
 
 export type ModbusInputMapping = {
-  operation: ModbusOperation;
+  readonly operation: ModbusOperation;
   /** For reads: evaluated in order, first matching rule wins. */
   outputs?: readonly OutputRule[];
   /** For reads: output when no rule matches. Default null. */
@@ -148,6 +148,14 @@ function describeException(code: number): string {
   return name === undefined ? `exception code ${code}` : `exception code ${code} (${name})`;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isOutputSymbol(value: unknown): value is OutputSymbol {
+  return value === null || typeof value === 'string';
+}
+
 type ExecutedOperation = {
   functionCode: number;
   transactionId: number;
@@ -169,8 +177,11 @@ type Pending = {
 // ---------------------------------------------------------------------------
 
 function validateOperation(operation: ModbusOperation, where: string, allowWrites: boolean): void {
+  if (!isRecord(operation)) throw new ModbusTcpAdapterError('config', `${where}: operation must be an object.`);
   const { kind } = operation;
-  if (!(kind in FUNCTION_CODES)) throw new ModbusTcpAdapterError('config', `${where}: unknown operation kind ${JSON.stringify(kind)}.`);
+  if (typeof kind !== 'string' || !Object.hasOwn(FUNCTION_CODES, kind)) {
+    throw new ModbusTcpAdapterError('config', `${where}: unknown operation kind ${JSON.stringify(kind)}.`);
+  }
   if (!Number.isSafeInteger(operation.address) || operation.address < 0 || operation.address > 0xffff) {
     throw new ModbusTcpAdapterError('config', `${where}: address must be an integer in [0, 65535].`);
   }
@@ -187,6 +198,9 @@ function validateOperation(operation: ModbusOperation, where: string, allowWrite
       throw new ModbusTcpAdapterError('config',
         `${where}: ${operation.kind} is a write; set allowWrites: true to permit writes explicitly.`);
     }
+    if (operation.kind === 'writeSingleCoil' && typeof operation.value !== 'boolean') {
+      throw new ModbusTcpAdapterError('config', `${where}: coil value must be boolean.`);
+    }
     if (operation.kind === 'writeSingleRegister' &&
       (!Number.isSafeInteger(operation.value) || operation.value < 0 || operation.value > 0xffff)) {
       throw new ModbusTcpAdapterError('config', `${where}: register value must be an integer in [0, 65535].`);
@@ -194,9 +208,23 @@ function validateOperation(operation: ModbusOperation, where: string, allowWrite
   }
 }
 
-function validateCondition(condition: OutputCondition, where: string): void {
+function validateObservedValue(value: number, where: string, maximum: number): void {
+  if (!Number.isSafeInteger(value) || value < 0 || value > maximum) {
+    throw new ModbusTcpAdapterError('config', `${where} must be an integer in [0, ${maximum}].`);
+  }
+}
+
+function validateCondition(condition: OutputCondition, where: string, maximum: number): void {
+  if (!isRecord(condition)) throw new ModbusTcpAdapterError('config', `${where}: condition must be an object.`);
+  if (condition.kind !== 'always' && condition.kind !== 'equals' && condition.kind !== 'valueAt') {
+    const unknownKind = (condition as unknown as Record<string, unknown>)['kind'];
+    throw new ModbusTcpAdapterError('config', `${where}: unknown condition kind ${JSON.stringify(unknownKind)}.`);
+  }
   if (condition.kind === 'equals') {
-    if (condition.values.length === 0) throw new ModbusTcpAdapterError('config', `${where}: equals condition needs at least one value.`);
+    if (!Array.isArray(condition.values) || condition.values.length === 0) {
+      throw new ModbusTcpAdapterError('config', `${where}: equals condition needs a non-empty values array.`);
+    }
+    condition.values.forEach((value, index) => validateObservedValue(value, `${where}.values[${index}]`, maximum));
     return;
   }
   if (condition.kind === 'valueAt') {
@@ -206,7 +234,35 @@ function validateCondition(condition: OutputCondition, where: string): void {
     if (condition.equals === undefined && condition.min === undefined && condition.max === undefined) {
       throw new ModbusTcpAdapterError('config', `${where}: valueAt needs "equals", "min" or "max".`);
     }
+    if (condition.equals !== undefined) validateObservedValue(condition.equals, `${where}.equals`, maximum);
+    if (condition.min !== undefined) validateObservedValue(condition.min, `${where}.min`, maximum);
+    if (condition.max !== undefined) validateObservedValue(condition.max, `${where}.max`, maximum);
+    if (condition.min !== undefined && condition.max !== undefined && condition.min > condition.max) {
+      throw new ModbusTcpAdapterError('config', `${where}: min must not exceed max.`);
+    }
   }
+}
+
+function cloneOperation(operation: ModbusOperation): ModbusOperation {
+  if (isReadOperation(operation)) return { kind: operation.kind, address: operation.address, quantity: operation.quantity };
+  if (operation.kind === 'writeSingleCoil') return { kind: operation.kind, address: operation.address, value: operation.value };
+  return { kind: operation.kind, address: operation.address, value: operation.value };
+}
+
+function cloneCondition(condition: OutputCondition): OutputCondition {
+  if (condition.kind === 'always') return { kind: 'always' };
+  if (condition.kind === 'equals') return { kind: 'equals', values: [...condition.values] };
+  return { kind: 'valueAt', index: condition.index, equals: condition.equals, min: condition.min, max: condition.max };
+}
+
+function cloneMapping(mapping: ModbusInputMapping): ModbusInputMapping {
+  return {
+    operation: cloneOperation(mapping.operation),
+    outputs: mapping.outputs?.map((rule) => ({ symbol: rule.symbol, when: cloneCondition(rule.when) })),
+    otherwise: mapping.otherwise,
+    onSuccess: mapping.onSuccess,
+    onException: mapping.onException,
+  };
 }
 
 function conditionMatches(condition: OutputCondition, values: readonly number[]): boolean {
@@ -248,9 +304,13 @@ export class ModbusTcpAdapter implements SutAdapter {
   private completedIds: number[] = [];
   private fatal: ModbusTcpAdapterError | undefined;
   private closePromise: Promise<void> | undefined;
+  private resetting = false;
 
   constructor(options: ModbusTcpAdapterOptions) {
-    if (options.host.trim() === '') throw new ModbusTcpAdapterError('config', 'host must be a non-empty string.');
+    if (!isRecord(options)) throw new ModbusTcpAdapterError('config', 'options must be an object.');
+    if (typeof options.host !== 'string' || options.host.trim() === '') {
+      throw new ModbusTcpAdapterError('config', 'host must be a non-empty string.');
+    }
     if (!Number.isSafeInteger(options.port) || options.port < 1 || options.port > 65535) {
       throw new ModbusTcpAdapterError('config', 'port must be an integer in [1, 65535].');
     }
@@ -259,13 +319,34 @@ export class ModbusTcpAdapter implements SutAdapter {
       throw new ModbusTcpAdapterError('config', 'unitId must be an integer in [0, 255].');
     }
     const allowWrites = options.allowWrites ?? false;
+    if (typeof allowWrites !== 'boolean') throw new ModbusTcpAdapterError('config', 'allowWrites must be boolean.');
+    if (!isRecord(options.inputs)) throw new ModbusTcpAdapterError('config', 'inputs must be an object.');
     for (const [symbol, mapping] of Object.entries(options.inputs)) {
       const where = `inputs[${JSON.stringify(symbol)}]`;
+      if (symbol.trim() === '') throw new ModbusTcpAdapterError('config', 'input symbols must be non-empty strings.');
+      if (!isRecord(mapping)) throw new ModbusTcpAdapterError('config', `${where}: mapping must be an object.`);
       validateOperation(mapping.operation, where, allowWrites);
-      for (const rule of mapping.outputs ?? []) validateCondition(rule.when, where);
+      if (mapping.outputs !== undefined && !Array.isArray(mapping.outputs)) {
+        throw new ModbusTcpAdapterError('config', `${where}.outputs must be an array.`);
+      }
+      const maximum = isReadOperation(mapping.operation) && isBitRead(mapping.operation.kind) ? 1 : 0xffff;
+      for (const [index, rule] of (mapping.outputs ?? []).entries()) {
+        if (!isRecord(rule) || !isOutputSymbol(rule.symbol)) {
+          throw new ModbusTcpAdapterError('config', `${where}.outputs[${index}] must contain a string/null symbol and condition.`);
+        }
+        validateCondition(rule.when as OutputCondition, `${where}.outputs[${index}].when`, maximum);
+      }
+      for (const field of ['otherwise', 'onSuccess', 'onException'] as const) {
+        if (mapping[field] !== undefined && !isOutputSymbol(mapping[field])) {
+          throw new ModbusTcpAdapterError('config', `${where}.${field} must be a string or null.`);
+        }
+      }
       if (!isReadOperation(mapping.operation) && mapping.outputs !== undefined) {
         throw new ModbusTcpAdapterError('config', `${where}: "outputs" predicates apply to reads; use "onSuccess" for writes.`);
       }
+    }
+    if (options.resetOperations !== undefined && !Array.isArray(options.resetOperations)) {
+      throw new ModbusTcpAdapterError('config', 'resetOperations must be an array.');
     }
     for (const [index, operation] of (options.resetOperations ?? []).entries()) {
       validateOperation(operation, `resetOperations[${index}]`, allowWrites);
@@ -281,8 +362,8 @@ export class ModbusTcpAdapter implements SutAdapter {
     this.host = options.host;
     this.port = options.port;
     this.unitId = unitId;
-    this.inputs = new Map(Object.entries(options.inputs));
-    this.resetOperations = [...(options.resetOperations ?? [])];
+    this.inputs = new Map(Object.entries(options.inputs).map(([symbol, mapping]) => [symbol, cloneMapping(mapping)]));
+    this.resetOperations = (options.resetOperations ?? []).map(cloneOperation);
     this.connectTimeoutMs = options.connectTimeoutMs ?? 5_000;
     this.responseTimeoutMs = options.responseTimeoutMs ?? 5_000;
     this.maxReceiveBufferBytes = options.maxReceiveBufferBytes ?? 8_192;
@@ -290,25 +371,31 @@ export class ModbusTcpAdapter implements SutAdapter {
 
   /** True while a TCP connection is open. */
   get connected(): boolean {
-    return this.socket !== undefined;
+    return this.socket !== undefined && !this.socket.connecting && !this.socket.destroyed;
   }
 
   async reset(signal?: AbortSignal): Promise<void> {
     this.ensureNotClosed();
-    if (this.fatal !== undefined) {
-      await this.disconnect();
-      this.fatal = undefined;
-    }
-    if (this.socket === undefined) await this.connect(signal);
-    // Non-destructive by default: reset ends here unless operations were
-    // configured explicitly (writes among them are gated by allowWrites).
-    for (const operation of this.resetOperations) {
-      const result = await this.execute(operation, signal);
-      if (result.exceptionCode !== undefined) {
-        throw this.makeFatal(new ModbusTcpAdapterError('modbus-exception',
-          `Reset operation ${operation.kind} @${operation.address} failed with ${describeException(result.exceptionCode)}.`,
-          result.exceptionCode));
+    if (this.resetting) throw new ModbusTcpAdapterError('state', 'A reset/connect operation is already in progress.');
+    this.resetting = true;
+    try {
+      if (this.fatal !== undefined) {
+        await this.disconnect();
+        this.fatal = undefined;
       }
+      if (!this.connected) await this.connect(signal);
+      // Non-destructive by default: reset ends here unless operations were
+      // configured explicitly (writes among them are gated by allowWrites).
+      for (const operation of this.resetOperations) {
+        const result = await this.execute(operation, signal);
+        if (result.exceptionCode !== undefined) {
+          throw this.makeFatal(new ModbusTcpAdapterError('modbus-exception',
+            `Reset operation ${operation.kind} @${operation.address} failed with ${describeException(result.exceptionCode)}.`,
+            result.exceptionCode));
+        }
+      }
+    } finally {
+      this.resetting = false;
     }
   }
 
@@ -318,7 +405,7 @@ export class ModbusTcpAdapter implements SutAdapter {
     if (mapping === undefined) {
       throw new ModbusTcpAdapterError('config', `Input symbol ${JSON.stringify(input)} has no configured Modbus operation.`);
     }
-    if (this.socket === undefined) {
+    if (this.resetting || !this.connected) {
       throw this.fatal ?? new ModbusTcpAdapterError('state', 'Adapter is not connected; call reset() first.');
     }
 
@@ -382,9 +469,11 @@ export class ModbusTcpAdapter implements SutAdapter {
     this.completedIds = [];
     this.socketClosed = new Promise((resolve) => {
       socket.once('close', () => {
-        // Guard: a reset() may already have replaced the socket.
-        if (this.socket === socket) this.socket = undefined;
-        this.onSocketClosed();
+        // Ignore delayed events from a socket already detached/replaced.
+        if (this.socket === socket) {
+          this.socket = undefined;
+          this.onSocketClosed();
+        }
         resolve();
       });
     });
@@ -415,14 +504,22 @@ export class ModbusTcpAdapter implements SutAdapter {
         abandon();
         reject(new ModbusTcpAdapterError('cancelled', 'Cancelled while connecting.'));
       };
+      const onClose = () => {
+        cleanup();
+        reject(this.closePromise !== undefined
+          ? new ModbusTcpAdapterError('closed', 'Adapter closed while connecting.')
+          : new ModbusTcpAdapterError('connect', `Connection to ${this.host}:${this.port} closed before it was established.`));
+      };
       const cleanup = () => {
         clearTimeout(timer);
         socket.off('connect', onConnect);
         socket.off('error', onError);
+        socket.off('close', onClose);
         signal?.removeEventListener('abort', onAbort);
       };
       socket.once('connect', onConnect);
       socket.once('error', onError);
+      socket.once('close', onClose);
       signal?.addEventListener('abort', onAbort, { once: true });
       socket.connect({ host: this.host, port: this.port });
     });
@@ -431,6 +528,7 @@ export class ModbusTcpAdapter implements SutAdapter {
   private async disconnect(): Promise<void> {
     const socket = this.socket;
     this.socket = undefined;
+    this.pending?.reject(this.fatal ?? new ModbusTcpAdapterError('closed', 'Adapter is closing.'));
     socket?.destroy();
     await this.socketClosed;
   }
@@ -578,8 +676,9 @@ export class ModbusTcpAdapter implements SutAdapter {
     };
 
     if (functionCode === (expectedCode | 0x80)) {
-      if (frame.length < 9) {
-        this.makeFatal(new ModbusTcpAdapterError('protocol', 'Exception response is too short.'));
+      if (frame.length !== 9) {
+        this.makeFatal(new ModbusTcpAdapterError('protocol',
+          `Exception response must be exactly 9 bytes, got ${frame.length}.`));
         return;
       }
       pending.resolve({ ...base, exceptionCode: frame.readUInt8(8) });
@@ -625,8 +724,9 @@ export class ModbusTcpAdapter implements SutAdapter {
     }
 
     // Write echo: the response must repeat address and value exactly.
-    if (frame.length < 12) {
-      this.makeFatal(new ModbusTcpAdapterError('protocol', 'Write echo response is too short.'));
+    if (frame.length !== 12) {
+      this.makeFatal(new ModbusTcpAdapterError('protocol',
+        `Write echo response must be exactly 12 bytes, got ${frame.length}.`));
       return;
     }
     const echoAddress = frame.readUInt16BE(8);

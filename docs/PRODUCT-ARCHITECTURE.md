@@ -63,6 +63,7 @@ model source/import
 - virtual-time TFSM simulator, boundary synthesis and timed oracle;
 - TypeScript and C++ execution cores with deterministic in-memory adapters;
 - hardened Node.js CLI-process adapter for real external SUT programs;
+- Modbus TCP adapter with guarded writes and loopback integration fixtures;
 - manual execution, detailed traces and JSON export in the browser workbench;
 - C++ CLI plus TypeScript UI.
 
@@ -92,7 +93,7 @@ model source/import
 ### Integration (in progress)
 
 - SUT adapter SDK and real runner (CLI process complete);
-- device/protocol adapters;
+- additional device/protocol adapters (Modbus TCP complete);
 - parallel/cascade composition and communicating machines;
 - CI reports and reproducible test campaigns.
 

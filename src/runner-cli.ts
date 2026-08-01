@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { CliProcessAdapter } from './adapters/cli-process';
+import { ModbusTcpAdapter, type ModbusTcpAdapterOptions } from './adapters/modbus-tcp';
 import { parseTestPlan, runTestPlan, type TestRunResult } from './testing';
 import { parseRunnerCliArgs, RunnerCliUsageError } from './runner-cli-options';
 
@@ -9,6 +10,7 @@ const HELP = `Automata Studio test runner v0.6
 Usage:
   automata validate <plan.json> [--format text|json]
   automata run <plan.json> --adapter cli --executable <path> [options]
+  automata run <plan.json> --adapter modbus --config <adapter.json> [options]
 
 CLI adapter options:
   --arg <value>                 Repeat for every executable argument
@@ -16,6 +18,11 @@ CLI adapter options:
   --env <NAME>                  Allow one environment variable; repeatable
   --startup-timeout <ms>        Process startup deadline
   --response-timeout <ms>       Adapter response deadline
+  --report <file>               Write the complete JSON result
+  --format text|json            Console output format (default: text)
+
+Modbus adapter options:
+  --config <file>               Host, unit ID, symbol mapping and write gate
   --report <file>               Write the complete JSON result
   --format text|json            Console output format (default: text)
 
@@ -65,6 +72,26 @@ async function readPlan(planPath: string) {
   return parsed.value;
 }
 
+async function readModbusConfig(configPath: string): Promise<ModbusTcpAdapterOptions> {
+  const absolute = resolve(configPath);
+  let value: unknown;
+  try {
+    value = JSON.parse(await readFile(absolute, 'utf8')) as unknown;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new RunnerCliUsageError(`Cannot read Modbus config ${JSON.stringify(absolute)}: ${message}`);
+  }
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new RunnerCliUsageError(`Modbus config ${JSON.stringify(absolute)} must be a JSON object.`);
+  }
+  const candidate = value as Record<string, unknown>;
+  if (typeof candidate['host'] !== 'string' || typeof candidate['port'] !== 'number'
+    || typeof candidate['inputs'] !== 'object' || candidate['inputs'] === null || Array.isArray(candidate['inputs'])) {
+    throw new RunnerCliUsageError('Modbus config requires string host, numeric port and object inputs.');
+  }
+  return value as ModbusTcpAdapterOptions;
+}
+
 async function main(): Promise<number> {
   const command = parseRunnerCliArgs(process.argv.slice(2));
   if (command.kind === 'help') {
@@ -81,14 +108,16 @@ async function main(): Promise<number> {
     return 0;
   }
 
-  const adapter = new CliProcessAdapter({
-    executable: command.executable,
-    args: command.args,
-    cwd: command.cwd,
-    envAllowlist: command.envAllowlist,
-    startupTimeoutMs: command.startupTimeoutMs,
-    responseTimeoutMs: command.responseTimeoutMs,
-  });
+  const adapter = command.adapter === 'cli'
+    ? new CliProcessAdapter({
+        executable: command.executable,
+        args: command.args,
+        cwd: command.cwd,
+        envAllowlist: command.envAllowlist,
+        startupTimeoutMs: command.startupTimeoutMs,
+        responseTimeoutMs: command.responseTimeoutMs,
+      })
+    : new ModbusTcpAdapter(await readModbusConfig(command.configPath));
   const result = await runTestPlan(plan, adapter);
   const json = JSON.stringify(result, null, 2);
   if (command.reportPath !== undefined) {

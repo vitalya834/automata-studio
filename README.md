@@ -14,6 +14,17 @@ core. Modbus is one future adapter, not the product boundary: the same abstract
 test plan can target a simulator, CLI process, HTTP service, CAN device or other
 SUT through an adapter.
 
+## v0.7 capabilities
+
+- executable Node.js test runner for plan validation, external SUT execution,
+  readable/JSON traces, report files and CI exit codes;
+- real Modbus TCP adapter with FC1–FC6 reads/writes, MBAP correlation, TCP
+  fragmentation handling and abstract symbol predicates;
+- non-destructive Modbus reset and an explicit `allowWrites: true` gate;
+- loopback-only Modbus fixture and `npm run demo:modbus` end-to-end scenario;
+- strict response framing, deadlines, cancellation and socket cleanup;
+- adapter configuration kept outside protocol-neutral Test Plan IR.
+
 ## v0.6 capabilities
 
 - Node.js CLI-process adapter for testing real external programs through a
@@ -115,6 +126,7 @@ After `npm run cpp:build`:
 ```powershell
 npm run cli -- validate examples/test-plans/turnstile-transition-cover.json
 npm run demo:cli
+npm run demo:modbus
 ```
 
 See [runner CLI documentation](docs/RUNNER-CLI.md) for external executables,
@@ -131,6 +143,7 @@ environment allowlisting, JSON output and report files.
 - [Model IR migrations](docs/model-ir/MIGRATIONS.md)
 - [Timed testing semantics](docs/TIMED-TESTING.md)
 - [External SUT runner CLI](docs/RUNNER-CLI.md)
+- [Modbus TCP adapter](docs/adapters/MODBUS-TCP.md)
 - [Next isolated task for Claude](docs/CLAUDE-NEXT-TASK.md)
 
 Obsidian project notes:

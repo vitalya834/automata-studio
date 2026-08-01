@@ -56,7 +56,7 @@ Unlocked --coin / return--> Unlocked`;
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <header class="topbar">
     <div class="brand"><span class="brand-mark">A</span><div><span class="eyebrow">AUTOMATA ENGINEERING WORKBENCH</span><h1>Automata Studio</h1></div></div>
-    <div class="header-actions"><span class="version">CORE / UI 0.6</span><button id="build" class="primary">Анализировать <kbd>Ctrl↵</kbd></button></div>
+    <div class="header-actions"><span class="version">CORE / UI 0.7</span><button id="build" class="primary">Анализировать <kbd>Ctrl↵</kbd></button></div>
   </header>
 
   <main>
@@ -139,6 +139,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         </div>
       </div>
       <div id="execution-message" class="execution-message">Постройте детерминированную модель, чтобы подготовить запуск.</div>
+      <div class="adapter-catalog" aria-label="Доступные SUT-адаптеры">
+        <div><strong>IN-MEMORY</strong><span>Браузер · эталонная FSM</span></div>
+        <div><strong>CLI PROCESS</strong><span>Node runner · внешние программы</span></div>
+        <div><strong>MODBUS TCP</strong><span>Node runner · FC1–FC6 · SAFE WRITES</span></div>
+      </div>
       <div id="execution-summary" class="execution-summary" hidden>
         <div class="result-card pass"><span>PASS</span><strong id="pass-count">0</strong></div>
         <div class="result-card fail"><span>FAIL</span><strong id="fail-count">0</strong></div>

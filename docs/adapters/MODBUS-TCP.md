@@ -1,5 +1,7 @@
 # Modbus TCP SUT Adapter (v0.7)
 
+[English](MODBUS-TCP.md) | [Русский](MODBUS-TCP.ru.md)
+
 Adapter: [`src/adapters/modbus-tcp.ts`](../../src/adapters/modbus-tcp.ts) —
 implements the `SutAdapter` contract from `src/testing.ts` over Modbus TCP.
 Deterministic loopback fixture:
@@ -79,6 +81,8 @@ Response metadata: `functionCode`, `address`, `transactionId`, `values`
   by automated tests.
 - **Write gate.** Every write — in `inputs` or in `resetOperations` — is
   rejected at construction time unless `allowWrites: true` is set explicitly.
+  Validated mappings are deep-copied so later caller mutation cannot turn an
+  authorised read into an unauthorised write.
 - **Non-destructive reset.** By default `reset()` only (re)establishes the
   connection. `resetOperations` (e.g. forcing a known coil state) are opt-in
   and run in order; an exception during reset is an error, not an output.

@@ -15,6 +15,14 @@ export type RunnerCliCommand =
       responseTimeoutMs?: number;
       reportPath?: string;
       format: OutputFormat;
+    }
+  | {
+      kind: 'run';
+      planPath: string;
+      adapter: 'modbus';
+      configPath: string;
+      reportPath?: string;
+      format: OutputFormat;
     };
 
 export class RunnerCliUsageError extends Error {
@@ -53,6 +61,7 @@ export function parseRunnerCliArgs(argv: string[]): RunnerCliCommand {
   let planPath: string | undefined = argv[1]?.startsWith('--') === false ? argv[1] : undefined;
   let adapter: string | undefined;
   let executable: string | undefined;
+  let configPath: string | undefined;
   const args: string[] = [];
   let cwd: string | undefined;
   const envAllowlist: string[] = [];
@@ -70,6 +79,7 @@ export function parseRunnerCliArgs(argv: string[]): RunnerCliCommand {
       case '--plan': planPath = value; break;
       case '--adapter': adapter = value; break;
       case '--executable': executable = value; break;
+      case '--config': configPath = value; break;
       case '--arg': args.push(value); break;
       case '--cwd': cwd = value; break;
       case '--env': envAllowlist.push(value); break;
@@ -88,7 +98,7 @@ export function parseRunnerCliArgs(argv: string[]): RunnerCliCommand {
 
   if (planPath === undefined) throw new RunnerCliUsageError('A plan path or --plan is required.');
   if (kind === 'validate') {
-    if (adapter !== undefined || executable !== undefined || args.length > 0 || cwd !== undefined
+    if (adapter !== undefined || executable !== undefined || configPath !== undefined || args.length > 0 || cwd !== undefined
       || envAllowlist.length > 0 || startupTimeoutMs !== undefined || responseTimeoutMs !== undefined
       || reportPath !== undefined) {
       throw new RunnerCliUsageError('validate accepts only --plan and --format.');
@@ -96,9 +106,18 @@ export function parseRunnerCliArgs(argv: string[]): RunnerCliCommand {
     return { kind, planPath, format };
   }
 
-  if (adapter !== 'cli') {
-    throw new RunnerCliUsageError('run currently requires --adapter cli.');
+  if (adapter !== 'cli' && adapter !== 'modbus') {
+    throw new RunnerCliUsageError('run requires --adapter cli or --adapter modbus.');
   }
+  if (adapter === 'modbus') {
+    if (configPath === undefined) throw new RunnerCliUsageError('--config is required for the modbus adapter.');
+    if (executable !== undefined || args.length > 0 || cwd !== undefined || envAllowlist.length > 0
+      || startupTimeoutMs !== undefined || responseTimeoutMs !== undefined) {
+      throw new RunnerCliUsageError('Modbus connection and mapping options belong in --config.');
+    }
+    return { kind, planPath, adapter, configPath, reportPath, format };
+  }
+  if (configPath !== undefined) throw new RunnerCliUsageError('--config is only valid for the modbus adapter.');
   if (executable === undefined) throw new RunnerCliUsageError('--executable is required for the cli adapter.');
 
   return {

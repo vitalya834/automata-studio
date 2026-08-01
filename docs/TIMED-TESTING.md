@@ -71,7 +71,9 @@ the TFSM still contains only abstract symbols and timing contracts.
 
 ## Current limitations
 
-- virtual reference execution only; real protocol adapters are separate work;
+- the timed workbench uses virtual reference execution; real CLI and Modbus TCP
+  adapters now execute ordinary Test Plan IR, while timed wall-clock campaign
+  integration remains separate work;
 - no stochastic timing distributions;
 - no parallel/composed TFSM;
 - no Alur–Dill zone/region execution;

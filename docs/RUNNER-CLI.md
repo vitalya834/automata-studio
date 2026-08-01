@@ -17,6 +17,13 @@ npm run demo:cli
 The demo launches the bundled turnstile fixture as a real child process and
 executes two generated test cases. It does not mock the adapter boundary.
 
+The Modbus demo starts an in-process server bound only to `127.0.0.1` on an
+ephemeral port and executes a real FC1 request:
+
+```powershell
+npm run demo:modbus
+```
+
 ## Run your own program
 
 ```powershell
@@ -41,3 +48,17 @@ shell. See [the process protocol](adapters/CLI-PROCESS.md).
   CLI input, an invalid plan or an infrastructure error.
 
 This separation makes the command suitable for local debugging and CI scripts.
+
+## Modbus TCP
+
+Keep endpoint and register mappings outside the plan:
+
+```powershell
+npm run cli -- run examples/test-plans/modbus-lamp.json `
+  --adapter modbus `
+  --config examples/adapters/modbus-lamp.json
+```
+
+The example expects a simulator on `127.0.0.1:1502`; it never scans for a
+device. Writes are rejected unless the config explicitly contains
+`"allowWrites": true`. Inspect every mapping before enabling that gate.

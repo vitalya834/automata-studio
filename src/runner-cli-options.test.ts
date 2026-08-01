@@ -34,10 +34,20 @@ describe('runner CLI options', () => {
   it('rejects missing values, unsafe ambiguity and invalid numbers', () => {
     expect(() => parseRunnerCliArgs(['run', '--plan'])).toThrow(RunnerCliUsageError);
     expect(() => parseRunnerCliArgs(['run', '--plan', 'p', '--adapter', 'modbus']))
-      .toThrow('currently requires --adapter cli');
+      .toThrow('--config is required');
     expect(() => parseRunnerCliArgs(['run', '--plan', 'p', '--adapter', 'cli', '--executable', 'x',
       '--response-timeout', '0'])).toThrow('positive integer');
     expect(() => parseRunnerCliArgs(['validate', '--plan', 'p', '--executable', 'x']))
       .toThrow('validate accepts only');
+  });
+
+  it('parses a Modbus run with adapter configuration isolated from the plan', () => {
+    expect(parseRunnerCliArgs([
+      'run', 'plan.json', '--adapter', 'modbus', '--config', 'modbus.json',
+      '--format', 'json', '--report', 'result.json',
+    ])).toEqual({
+      kind: 'run', planPath: 'plan.json', adapter: 'modbus', configPath: 'modbus.json',
+      format: 'json', reportPath: 'result.json',
+    });
   });
 });

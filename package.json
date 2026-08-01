@@ -1,7 +1,7 @@
 {
   "name": "automata-studio",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.7.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,6 +9,7 @@
     "cli:build": "vite build --ssr src/runner-cli.ts --outDir dist-cli",
     "cli": "npm run cli:build --silent && node dist-cli/runner-cli.js",
     "demo:cli": "npm run cli -- run examples/test-plans/turnstile-transition-cover.json --adapter cli --executable node --arg test-fixtures/cli-sut/turnstile.cjs",
+    "demo:modbus": "npm run cli:build --silent && vite build --ssr src/modbus-demo.ts --outDir dist-cli --emptyOutDir false --logLevel warn && node dist-cli/modbus-demo.js",
     "test": "vitest run",
     "cpp:build": "powershell -ExecutionPolicy Bypass -File scripts/build-cpp.ps1",
     "cpp:test": "powershell -ExecutionPolicy Bypass -File scripts/build-cpp.ps1 -Test"

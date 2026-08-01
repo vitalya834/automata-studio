@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runTestPlan, type TestPlan } from '../testing';
-import { ModbusTcpAdapter, ModbusTcpAdapterError, type ModbusTcpAdapterOptions } from './modbus-tcp';
+import {
+  ModbusTcpAdapter,
+  ModbusTcpAdapterError,
+  type ModbusOperation,
+  type ModbusTcpAdapterOptions,
+} from './modbus-tcp';
 import { ModbusFixtureServer, exceptionReply } from '../../test-fixtures/modbus-tcp/fixture-server';
 
 const servers: ModbusFixtureServer[] = [];
@@ -188,6 +193,33 @@ describe('reset semantics', () => {
       },
     })).toThrowError(/allowWrites/);
   });
+
+  it('copies caller-owned mappings so mutation cannot bypass the write gate', async () => {
+    const { server, port } = await makeServer();
+    let observedFunctionCode = 0;
+    server.handler = (request) => { observedFunctionCode = request.functionCode; return undefined; };
+    const operation = { kind: 'readCoils', address: 10, quantity: 1 } satisfies ModbusOperation;
+    const adapter = makeAdapter(port, { inputs: { probe: { operation } } });
+
+    const mutable = operation as unknown as { kind: string; value?: boolean };
+    mutable.kind = 'writeSingleCoil';
+    mutable.value = true;
+
+    await adapter.reset();
+    await adapter.send('probe');
+    expect(observedFunctionCode).toBe(1);
+    expect(server.coils.has(10)).toBe(false);
+  });
+
+  it('rejects a concurrent reset instead of reporting a connection prematurely', async () => {
+    const { port } = await makeServer();
+    const adapter = makeAdapter(port);
+    const first = adapter.reset();
+    await expectAdapterError(adapter.send('read_lamp'), 'state');
+    await expectAdapterError(adapter.reset(), 'state');
+    await first;
+    expect(adapter.connected).toBe(true);
+  });
 });
 
 describe('framing', () => {
@@ -293,6 +325,33 @@ describe('exceptions and failures', () => {
     expect(error.exceptionCode).toBe(4);
   });
 
+  it('rejects an exception response with trailing bytes', async () => {
+    const { server, port } = await makeServer();
+    server.handler = (request) => {
+      const extended = Buffer.concat([exceptionReply(request, 2), Buffer.from([0])]);
+      extended.writeUInt16BE(4, 4);
+      return { kind: 'reply', frames: [extended] };
+    };
+    const adapter = makeAdapter(port);
+    await adapter.reset();
+    await expectAdapterError(adapter.send('read_lamp'), 'protocol');
+  });
+
+  it('rejects a write echo with trailing bytes', async () => {
+    const { server, port } = await makeServer();
+    server.handler = (_request, normal) => {
+      const extended = Buffer.concat([normal, Buffer.from([0])]);
+      extended.writeUInt16BE(7, 4);
+      return { kind: 'reply', frames: [extended] };
+    };
+    const adapter = makeAdapter(port, {
+      allowWrites: true,
+      inputs: { write: { operation: { kind: 'writeSingleRegister', address: 1, value: 2 } } },
+    });
+    await adapter.reset();
+    await expectAdapterError(adapter.send('write'), 'protocol');
+  });
+
   it('times out when the SUT stays silent and recovers on reset', async () => {
     const { server, port } = await makeServer();
     server.handler = (request) => request.functionCode === 1 ? { kind: 'silent' } : undefined;
@@ -361,6 +420,16 @@ describe('close', () => {
     await expectAdapterError(adapter.reset(), 'closed');
     await expectAdapterError(adapter.send('read_lamp'), 'closed');
   });
+
+  it('close() settles an in-progress connection immediately', async () => {
+    const { port } = await makeServer();
+    const adapter = makeAdapter(port, { connectTimeoutMs: 5_000 });
+    const connecting = adapter.reset();
+    const closing = adapter.close();
+    await expectAdapterError(connecting, 'closed');
+    await closing;
+    expect(adapter.connected).toBe(false);
+  });
 });
 
 describe('configuration validation', () => {
@@ -376,5 +445,51 @@ describe('configuration validation', () => {
       inputs: { bad: { operation: { kind: 'writeSingleRegister', address: 0, value: 70000 } } },
     })).toThrowError(/value/);
     expect(() => makeAdapter(0)).toThrowError(/port/);
+  });
+
+  it('rejects invalid coil values and predicate bounds at runtime', () => {
+    expect(() => makeAdapter(1502, {
+      allowWrites: true,
+      inputs: {
+        bad: { operation: { kind: 'writeSingleCoil', address: 0, value: 'yes' as unknown as boolean } },
+      },
+    })).toThrowError(/boolean/);
+    expect(() => makeAdapter(1502, {
+      inputs: {
+        bad: {
+          operation: { kind: 'readCoils', address: 0, quantity: 1 },
+          outputs: [{ symbol: 'bad', when: { kind: 'valueAt', index: 0, equals: 2 } }],
+        },
+      },
+    })).toThrowError(/\[0, 1\]/);
+    expect(() => makeAdapter(1502, {
+      inputs: {
+        bad: {
+          operation: { kind: 'readHoldingRegisters', address: 0, quantity: 1 },
+          outputs: [{ symbol: 'bad', when: { kind: 'valueAt', index: 0, min: 10, max: 5 } }],
+        },
+      },
+    })).toThrowError(/min must not exceed max/);
+    expect(() => makeAdapter(1502, {
+      inputs: {
+        bad: {
+          operation: { kind: 'readHoldingRegisters', address: 0, quantity: 1 },
+          outputs: [{
+            symbol: 'bad',
+            when: { kind: 'equals', values: null as unknown as number[] },
+          }],
+        },
+      },
+    })).toThrowError(/values array/);
+  });
+
+  it('rejects inherited object keys as operation kinds', () => {
+    expect(() => makeAdapter(1502, {
+      inputs: {
+        bad: {
+          operation: { kind: 'constructor', address: 0, quantity: 1 } as unknown as ModbusOperation,
+        },
+      },
+    })).toThrowError(/unknown operation kind/);
   });
 });
