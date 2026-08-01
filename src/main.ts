@@ -26,6 +26,12 @@ import {
   type TimedCampaignResult,
   type TimedTestCase,
 } from './timed-testing.ts';
+import {
+  onboardingJourney,
+  onboardingTemplates,
+  resolveTemplateAction,
+  templateLinkUrl,
+} from './onboarding.ts';
 import timedGuardExample from '../examples/models/valid/tfsm-timed-guards-door.json';
 import timeoutExample from '../examples/models/valid/tfsm-password-timeout.json';
 import outputDelayExample from '../examples/models/valid/tfsm-lamp-output-delay.json';
@@ -60,6 +66,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   </header>
 
   <main>
+    ${renderOnboardingSection()}
+
     <section class="generator panel" aria-labelledby="generator-title">
       <div class="section-heading"><div><span class="step">01</span><h2 id="generator-title">Генератор модели</h2></div><p>Синтез автомата по воспроизводимым параметрам</p></div>
       <div class="generator-grid">
@@ -185,6 +193,39 @@ source.value = example;
 
 function escapeXml(value: unknown): string {
   return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
+}
+
+function renderOnboardingSection(): string {
+  const journey = onboardingJourney.map((step, index) => `
+    <li><span class="journey-index">${index + 1}</span><div><strong>${escapeXml(step.title)}</strong><small>${escapeXml(step.detail)}</small></div></li>`).join('');
+  const cards = onboardingTemplates.map((template) => {
+    const rows = [
+      ['Что тестируется', template.what],
+      ['Состояния', template.states],
+      ['Входы', template.inputs],
+      ['Выходы', template.outputs],
+      ['Адаптер', template.adapter],
+    ].map(([label, value]) => `<div><dt>${escapeXml(label)}</dt><dd>${escapeXml(value)}</dd></div>`).join('');
+    const openButton = template.action.kind === 'commands-only'
+      ? ''
+      : `<button class="primary open-example" data-template="${escapeXml(template.id)}">Open example</button>`;
+    const links = template.links.map((link) =>
+      `<a href="${escapeXml(templateLinkUrl(link))}" target="_blank" rel="noreferrer noopener">${escapeXml(link.label)} ↗</a>`).join('');
+    return `
+    <article class="template-card" aria-labelledby="template-${escapeXml(template.id)}">
+      <header><h3 id="template-${escapeXml(template.id)}">${escapeXml(template.title)}</h3><span class="badge neutral">${escapeXml(template.adapterBadge)}</span></header>
+      <p class="template-subtitle">${escapeXml(template.subtitle)}</p>
+      <dl class="template-facts">${rows}</dl>
+      <div class="template-command"><code>${escapeXml(template.command)}</code><button class="quiet copy-command" data-command="${escapeXml(template.command)}" aria-label="Скопировать команду для ${escapeXml(template.title)}">Copy</button></div>
+      <div class="template-actions">${openButton}<nav class="template-links" aria-label="Документация для ${escapeXml(template.title)}">${links}</nav></div>
+    </article>`;
+  }).join('');
+  return `
+    <section class="panel onboarding" aria-labelledby="onboarding-title">
+      <div class="section-heading"><div><span class="step">00</span><h2 id="onboarding-title">Start testing · Начать тестирование</h2></div><p>Выберите готовый сценарий — знание терминологии FSM не требуется</p></div>
+      <ol class="journey" aria-label="Путь пользователя">${journey}</ol>
+      <div class="template-grid">${cards}</div>
+    </section>`;
 }
 
 function formatInterval(interval: TimeInterval): string {
@@ -607,6 +648,37 @@ exportTimedButton.addEventListener('click', () => {
   downloadJson(filename, serializeTimedTestCases(currentTimedModel, currentTimedCases));
   timedMessage.className = 'execution-message success';
   timedMessage.textContent = `Timed boundary tests экспортированы: ${filename}`;
+});
+$<HTMLElement>('.onboarding').addEventListener('click', async (event) => {
+  const target = event.target instanceof Element ? event.target : undefined;
+  const openButton = target?.closest<HTMLButtonElement>('.open-example');
+  if (openButton?.dataset.template) {
+    const action = resolveTemplateAction(openButton.dataset.template);
+    if (!action || action.kind === 'commands-only') return;
+    if (action.kind === 'load-dsl') {
+      source.value = action.source;
+      build();
+      $('#format-badge').textContent = action.formatBadge;
+      $<HTMLElement>('.editor-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      const model = timedExamples.get(action.exampleId);
+      if (!model) return;
+      loadTimedModel(model);
+      $<HTMLSelectElement>('#timed-example').value = action.exampleId;
+      $<HTMLElement>('.timed-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    return;
+  }
+  const copyButton = target?.closest<HTMLButtonElement>('.copy-command');
+  if (copyButton?.dataset.command) {
+    try {
+      await navigator.clipboard.writeText(copyButton.dataset.command);
+      copyButton.textContent = 'Copied';
+    } catch {
+      copyButton.textContent = 'Ctrl+C';
+    }
+    window.setTimeout(() => { copyButton.textContent = 'Copy'; }, 1_500);
+  }
 });
 source.addEventListener('keydown', (event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') build(); });
 source.addEventListener('input', () => {
