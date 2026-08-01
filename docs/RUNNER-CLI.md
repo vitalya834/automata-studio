@@ -22,6 +22,7 @@ ephemeral port and executes a real FC1 request:
 
 ```powershell
 npm run demo:modbus
+npm run demo:http
 ```
 
 ## Run your own program
@@ -61,6 +62,19 @@ npm run cli -- run examples/test-plans/modbus-lamp.json `
   --adapter modbus `
   --config examples/adapters/modbus-lamp.json
 ```
+
+## HTTP/REST
+
+HTTP inputs are mapped to requests in a separate adapter configuration:
+
+```powershell
+npm run cli -- run examples/test-plans/http-ml-classifier.json `
+  --adapter http `
+  --config examples/adapters/http-ml-classifier.json
+```
+
+This supports APIs, game servers and ML inference services. See the
+[HTTP adapter reference](adapters/HTTP.md).
 
 The example expects a simulator on `127.0.0.1:1502`; it never scans for a
 device. Writes are rejected unless the config explicitly contains

@@ -52,4 +52,13 @@ describe('runner CLI options', () => {
       format: 'json', reportPath: 'result.json', junitPath: undefined, htmlPath: 'report.html',
     });
   });
+
+  it('parses an HTTP API run', () => {
+    expect(parseRunnerCliArgs([
+      'run', 'plan.json', '--adapter', 'http', '--config', 'http.json', '--html', 'report.html',
+    ])).toEqual({
+      kind: 'run', planPath: 'plan.json', adapter: 'http', configPath: 'http.json',
+      format: 'text', reportPath: undefined, junitPath: undefined, htmlPath: 'report.html',
+    });
+  });
 });

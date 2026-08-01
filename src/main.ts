@@ -56,7 +56,7 @@ Unlocked --coin / return--> Unlocked`;
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <header class="topbar">
     <div class="brand"><span class="brand-mark">A</span><div><span class="eyebrow">AUTOMATA ENGINEERING WORKBENCH</span><h1>Automata Studio</h1></div></div>
-    <div class="header-actions"><span class="version">CORE / UI 0.8</span><button id="build" class="primary">Анализировать <kbd>Ctrl↵</kbd></button></div>
+    <div class="header-actions"><span class="version">CORE / UI 0.9</span><button id="build" class="primary">Анализировать <kbd>Ctrl↵</kbd></button></div>
   </header>
 
   <main>
@@ -143,6 +143,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div><strong>IN-MEMORY</strong><span>Браузер · эталонная FSM</span></div>
         <div><strong>CLI PROCESS</strong><span>Node runner · внешние программы</span></div>
         <div><strong>MODBUS TCP</strong><span>Node runner · FC1–FC6 · SAFE WRITES</span></div>
+        <div><strong>HTTP / REST</strong><span>API · GAME SERVERS · ML INFERENCE</span></div>
       </div>
       <div id="execution-summary" class="execution-summary" hidden>
         <div class="result-card pass"><span>PASS</span><strong id="pass-count">0</strong></div>

@@ -11,6 +11,8 @@
 | Временное тестирование | [English](TIMED-TESTING.md) | [Русский](TIMED-TESTING.ru.md) |
 | Адаптер CLI-процесса | [English](adapters/CLI-PROCESS.md) | [Русский](adapters/CLI-PROCESS.ru.md) |
 | Modbus TCP‑адаптер | [English](adapters/MODBUS-TCP.md) | [Русский](adapters/MODBUS-TCP.ru.md) |
+| HTTP/REST-адаптер | [English](adapters/HTTP.md) | [Русский](adapters/HTTP.ru.md) |
+| Генерация последовательностей | [English](DATASET-GENERATION.md) | [Русский](DATASET-GENERATION.ru.md) |
 | Запускаемый SUT runner | [English](RUNNER-CLI.md) | [Русский](RUNNER-CLI.ru.md) |
 | Evidence reports | [English](REPORTS.md) | [Русский](REPORTS.ru.md) |
 | Семантика Model IR | [English](model-ir/SEMANTICS.md) | [Русский](model-ir/SEMANTICS.ru.md) |

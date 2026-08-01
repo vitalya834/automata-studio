@@ -15,6 +15,17 @@ Automata Studio — гибридная C++/TypeScript-платформа мод�
 ядром продукта. Один абстрактный тест-план можно выполнять на симуляторе,
 CLI-процессе, HTTP-сервисе, Modbus/CAN-устройстве или другом SUT через адаптер.
 
+## Возможности v0.9
+
+- HTTP/REST-адаптер для API, микросервисов, игровых серверов и ML inference;
+- настраиваемые reset и отображение входов в запросы с выбором результата через
+  JSON Pointer, текст или HTTP-статус;
+- контроль origin, запрет redirect, ограничение ответа и передача дедлайна;
+- настоящее loopback-демо игрового сервиса для start, pause, resume и victory;
+- воспроизводимый генератор JSONL-переходов для последовательностных моделей и
+  задач предсказания следующего состояния/выхода;
+- готовые примеры тест-планов для игр и ML и двуязычная документация.
+
 ## Возможности v0.8
 
 - детерминированные JUnit XML и автономные HTML evidence reports;
@@ -113,6 +124,7 @@ npm run cpp:build
 npm run cli -- validate examples/test-plans/turnstile-transition-cover.json
 npm run demo:cli
 npm run demo:modbus
+npm run demo:http
 ```
 
 Настройка executable, allowlist окружения, JSON и файлы отчётов описаны в
@@ -127,6 +139,8 @@ npm run demo:modbus
 - [Временное тестирование](docs/TIMED-TESTING.ru.md)
 - [Runner CLI для внешних SUT](docs/RUNNER-CLI.ru.md)
 - [Modbus TCP‑адаптер](docs/adapters/MODBUS-TCP.ru.md)
+- [HTTP/REST-адаптер для игр и ML](docs/adapters/HTTP.ru.md)
+- [Генерация последовательностей FSM для датасетов](docs/DATASET-GENERATION.ru.md)
 - [JUnit и HTML‑отчёты](docs/REPORTS.ru.md)
 - [CLI Process SUT Adapter](docs/adapters/CLI-PROCESS.ru.md)
 

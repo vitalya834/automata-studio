@@ -27,6 +27,16 @@ export type RunnerCliCommand =
       junitPath?: string;
       htmlPath?: string;
       format: OutputFormat;
+    }
+  | {
+      kind: 'run';
+      planPath: string;
+      adapter: 'http';
+      configPath: string;
+      reportPath?: string;
+      junitPath?: string;
+      htmlPath?: string;
+      format: OutputFormat;
     };
 
 export class RunnerCliUsageError extends Error {
@@ -114,18 +124,18 @@ export function parseRunnerCliArgs(argv: string[]): RunnerCliCommand {
     return { kind, planPath, format };
   }
 
-  if (adapter !== 'cli' && adapter !== 'modbus') {
-    throw new RunnerCliUsageError('run requires --adapter cli or --adapter modbus.');
+  if (adapter !== 'cli' && adapter !== 'modbus' && adapter !== 'http') {
+    throw new RunnerCliUsageError('run requires --adapter cli, --adapter modbus or --adapter http.');
   }
-  if (adapter === 'modbus') {
-    if (configPath === undefined) throw new RunnerCliUsageError('--config is required for the modbus adapter.');
+  if (adapter === 'modbus' || adapter === 'http') {
+    if (configPath === undefined) throw new RunnerCliUsageError(`--config is required for the ${adapter} adapter.`);
     if (executable !== undefined || args.length > 0 || cwd !== undefined || envAllowlist.length > 0
       || startupTimeoutMs !== undefined || responseTimeoutMs !== undefined) {
-      throw new RunnerCliUsageError('Modbus connection and mapping options belong in --config.');
+      throw new RunnerCliUsageError(`${adapter} connection and mapping options belong in --config.`);
     }
     return { kind, planPath, adapter, configPath, reportPath, junitPath, htmlPath, format };
   }
-  if (configPath !== undefined) throw new RunnerCliUsageError('--config is only valid for the modbus adapter.');
+  if (configPath !== undefined) throw new RunnerCliUsageError('--config is only valid for the modbus and http adapters.');
   if (executable === undefined) throw new RunnerCliUsageError('--executable is required for the cli adapter.');
 
   return {

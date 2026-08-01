@@ -2,16 +2,18 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { CliProcessAdapter } from './adapters/cli-process';
 import { ModbusTcpAdapter, type ModbusTcpAdapterOptions } from './adapters/modbus-tcp';
+import { HttpAdapter, type HttpAdapterOptions } from './adapters/http';
 import { parseTestPlan, runTestPlan, type TestRunResult } from './testing';
 import { parseRunnerCliArgs, RunnerCliUsageError } from './runner-cli-options';
 import { testRunToHtml, testRunToJUnit } from './reports';
 
-const HELP = `Automata Studio test runner v0.8
+const HELP = `Automata Studio test runner v0.9
 
 Usage:
   automata validate <plan.json> [--format text|json]
   automata run <plan.json> --adapter cli --executable <path> [options]
   automata run <plan.json> --adapter modbus --config <adapter.json> [options]
+  automata run <plan.json> --adapter http --config <adapter.json> [options]
 
 CLI adapter options:
   --arg <value>                 Repeat for every executable argument
@@ -26,6 +28,13 @@ CLI adapter options:
 
 Modbus adapter options:
   --config <file>               Host, unit ID, symbol mapping and write gate
+  --report <file>               Write the complete JSON result
+  --junit <file>                Write a JUnit XML evidence report
+  --html <file>                 Write a standalone HTML evidence report
+  --format text|json            Console output format (default: text)
+
+HTTP adapter options:
+  --config <file>               Base URL, reset request and input mappings
   --report <file>               Write the complete JSON result
   --junit <file>                Write a JUnit XML evidence report
   --html <file>                 Write a standalone HTML evidence report
@@ -97,6 +106,21 @@ async function readModbusConfig(configPath: string): Promise<ModbusTcpAdapterOpt
   return value as ModbusTcpAdapterOptions;
 }
 
+async function readHttpConfig(configPath: string): Promise<HttpAdapterOptions> {
+  const absolute = resolve(configPath);
+  let value: unknown;
+  try {
+    value = JSON.parse(await readFile(absolute, 'utf8')) as unknown;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new RunnerCliUsageError(`Cannot read HTTP config ${JSON.stringify(absolute)}: ${message}`);
+  }
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new RunnerCliUsageError(`HTTP config ${JSON.stringify(absolute)} must be a JSON object.`);
+  }
+  return value as HttpAdapterOptions;
+}
+
 async function main(): Promise<number> {
   const command = parseRunnerCliArgs(process.argv.slice(2));
   if (command.kind === 'help') {
@@ -122,7 +146,9 @@ async function main(): Promise<number> {
         startupTimeoutMs: command.startupTimeoutMs,
         responseTimeoutMs: command.responseTimeoutMs,
       })
-    : new ModbusTcpAdapter(await readModbusConfig(command.configPath));
+    : command.adapter === 'modbus'
+      ? new ModbusTcpAdapter(await readModbusConfig(command.configPath))
+      : new HttpAdapter(await readHttpConfig(command.configPath));
   const result = await runTestPlan(plan, adapter);
   const json = JSON.stringify(result, null, 2);
   const writes: Promise<void>[] = [];

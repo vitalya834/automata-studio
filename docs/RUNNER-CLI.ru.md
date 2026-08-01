@@ -22,6 +22,7 @@ Modbus‑демонстрация поднимает сервер только �
 
 ```powershell
 npm run demo:modbus
+npm run demo:http
 ```
 
 ## Тестирование своей программы
@@ -61,6 +62,19 @@ npm run cli -- run examples/test-plans/modbus-lamp.json `
   --adapter modbus `
   --config examples/adapters/modbus-lamp.json
 ```
+
+## HTTP/REST
+
+HTTP-входы отображаются в запросы отдельной конфигурацией адаптера:
+
+```powershell
+npm run cli -- run examples/test-plans/http-ml-classifier.json `
+  --adapter http `
+  --config examples/adapters/http-ml-classifier.json
+```
+
+Так можно тестировать API, игровые серверы и ML inference. Подробности находятся
+в [описании HTTP-адаптера](adapters/HTTP.ru.md).
 
 Пример ожидает симулятор на `127.0.0.1:1502` и ничего не сканирует. Записи
 отклоняются без явного `"allowWrites": true`. Перед включением этого флага

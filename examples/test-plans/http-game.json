@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "1.0",
+  "id": "http-game-state-cover",
+  "name": "Game session state transitions over HTTP",
+  "modelId": "GameSession",
+  "metadata": {
+    "domain": "game-testing",
+    "adapter": "http"
+  },
+  "cases": [
+    {
+      "id": "game-start",
+      "name": "Start a game",
+      "metadata": {},
+      "steps": [
+        { "input": "start", "allowedExpectedOutputs": ["playing"], "timeoutMs": 1000 }
+      ]
+    },
+    {
+      "id": "game-pause-resume",
+      "name": "Pause and resume gameplay",
+      "metadata": {},
+      "steps": [
+        { "input": "start", "allowedExpectedOutputs": ["playing"], "timeoutMs": 1000 },
+        { "input": "pause", "allowedExpectedOutputs": ["paused"], "timeoutMs": 1000 },
+        { "input": "resume", "allowedExpectedOutputs": ["playing"], "timeoutMs": 1000 }
+      ]
+    },
+    {
+      "id": "game-victory",
+      "name": "Reach victory",
+      "metadata": {},
+      "steps": [
+        { "input": "start", "allowedExpectedOutputs": ["playing"], "timeoutMs": 1000 },
+        { "input": "win", "allowedExpectedOutputs": ["victory"], "timeoutMs": 1000 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ml-classifier-contract",
+  "name": "ML inference behavioral contract",
+  "modelId": "BinaryClassifierApi",
+  "metadata": {
+    "domain": "machine-learning",
+    "adapter": "http",
+    "purpose": "regression and serving contract testing"
+  },
+  "cases": [
+    {
+      "id": "known-positive",
+      "name": "Known positive sample",
+      "metadata": { "datasetSplit": "golden" },
+      "steps": [
+        { "input": "predict_positive", "allowedExpectedOutputs": ["positive"], "timeoutMs": 2000 }
+      ]
+    },
+    {
+      "id": "known-negative",
+      "name": "Known negative sample",
+      "metadata": { "datasetSplit": "golden" },
+      "steps": [
+        { "input": "predict_negative", "allowedExpectedOutputs": ["negative"], "timeoutMs": 2000 }
+      ]
+    }
+  ]
+}

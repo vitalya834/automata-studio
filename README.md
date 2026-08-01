@@ -16,6 +16,18 @@ core. Modbus is one future adapter, not the product boundary: the same abstract
 test plan can target a simulator, CLI process, HTTP service, CAN device or other
 SUT through an adapter.
 
+## v0.9 capabilities
+
+- HTTP/REST adapter for APIs, microservices, game servers and ML inference;
+- configurable reset and input-to-request mappings with JSON Pointer, text or
+  status-code output selection;
+- same-origin enforcement, rejected redirects, bounded responses and propagated
+  cancellation deadlines;
+- real loopback game-service demo covering start, pause, resume and victory;
+- reproducible JSONL state-transition dataset generator for sequence-model and
+  next-state/output-prediction experiments;
+- ready-to-adapt game and ML behavioral test plans with bilingual documentation.
+
 ## v0.8 capabilities
 
 - deterministic JUnit XML and standalone HTML evidence reports;
@@ -138,6 +150,7 @@ After `npm run cpp:build`:
 npm run cli -- validate examples/test-plans/turnstile-transition-cover.json
 npm run demo:cli
 npm run demo:modbus
+npm run demo:http
 ```
 
 See [runner CLI documentation](docs/RUNNER-CLI.md) for external executables,
@@ -155,6 +168,8 @@ environment allowlisting, JSON output and report files.
 - [Timed testing semantics](docs/TIMED-TESTING.md)
 - [External SUT runner CLI](docs/RUNNER-CLI.md)
 - [Modbus TCP adapter](docs/adapters/MODBUS-TCP.md)
+- [HTTP/REST adapter for games and ML](docs/adapters/HTTP.md)
+- [FSM sequence dataset generation](docs/DATASET-GENERATION.md)
 - [JUnit and HTML evidence reports](docs/REPORTS.md)
 - [Next isolated task for Claude](docs/CLAUDE-NEXT-TASK.md)
 

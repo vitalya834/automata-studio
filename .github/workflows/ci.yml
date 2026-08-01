@@ -49,6 +49,9 @@ jobs:
       - name: Run Modbus TCP loopback end-to-end demo
         run: npm run demo:modbus
 
+      - name: Run HTTP game-service end-to-end demo
+        run: npm run demo:http
+
       - name: Test C++ core and runner
         run: npm run cpp:test
         env:
