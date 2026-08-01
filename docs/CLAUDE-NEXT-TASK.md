@@ -1,110 +1,88 @@
-# Next task for Claude — Canonical Model IR v1
+# Next task for Claude — CLI process SUT adapter v0.5
 
 ## Context
 
 Repository: `vitalya834/automata-studio`.
 
-Automata Studio is a C++/TypeScript model-based testing platform. The current
-v0.3 implements Mealy FSM parsing, legacy `.fsm`, deterministic seeded
-generation, analysis, transition-cover tests, Test Plan IR 1.0 and an in-memory
-runner in TypeScript and C++. Your task is the next isolated layer: a canonical,
-versioned Model IR. Do not redesign the UI, Test Plan IR or existing algorithms.
+Canonical Model IR v1 is complete and integrated in v0.4. The product already
+has versioned Test Plan IR, TypeScript/C++ runners and deterministic in-memory
+adapters. The next isolated task is the first adapter for a real external SUT:
+a local child process speaking JSON Lines over stdin/stdout.
 
 ## Branch and ownership
 
-Create branch `claude/model-ir-v1` from `agent/test-runner-v03` after that
-branch is pushed. If PR #1 and the v0.3 PR have already been merged, use the
-latest `main` instead.
+Create branch `claude/cli-sut-adapter-v05` from
+`agent/model-ir-integration-v04` after that branch is pushed.
 
 Own only:
 
-- `schema/automata-model-v1.schema.json`
-- `src/model-ir.ts`
-- `src/model-ir.test.ts`
-- `examples/models/**`
-- `docs/model-ir/**`
+- `src/adapters/cli-process.ts`
+- `src/adapters/cli-process.test.ts`
+- `test-fixtures/cli-sut/**`
+- `docs/adapters/CLI-PROCESS.md`
 
-Do not modify `schema/automata-test-plan-v1.schema.json`, `src/testing.ts`,
-`src/main.ts`, `src/style.css` or C++ files. If integration needs changes to
-`src/fsm.ts`, describe them in the handoff instead of editing it.
+Do not modify the UI, `src/testing.ts`, Model/Test IR schemas, C++ files,
+package metadata or existing tests. Describe required integration changes in
+the handoff instead of editing owned-by-Codex files.
 
-## Deliverables
+## Protocol
 
-1. `schema/automata-model-v1.schema.json`, JSON Schema 2020-12.
-2. Matching discriminated TypeScript types in `src/model-ir.ts`.
-3. Runtime validation with human-readable, JSON-pointer diagnostics.
-4. Valid and invalid fixtures plus Vitest coverage.
-5. `docs/model-ir/SEMANTICS.md` and `MIGRATIONS.md`.
+One UTF-8 JSON object per line.
 
-## Required common envelope
+Requests written by the adapter:
 
-- `schemaVersion: "1.0"`
-- `id`, `name`, optional `description`
-- `modelKind`
-- `semanticProfile`
-- typed input/output alphabets
-- stable state and transition IDs
-- one explicit initial configuration
-- provenance: generator/importer, source format, seed and timestamp
-- extension namespace for future fields
+```json
+{"type":"reset","requestId":"r1"}
+{"type":"input","requestId":"r2","symbol":"coin"}
+{"type":"close","requestId":"r3"}
+```
 
-Reject unknown semantic fields by default. Do not use graph coordinates as
-semantic data; put them in optional presentation metadata.
+Responses read from the SUT:
 
-## Model kinds in v1
+```json
+{"type":"ready","requestId":"r1"}
+{"type":"output","requestId":"r2","symbol":"unlock","metadata":{}}
+{"type":"closed","requestId":"r3"}
+```
 
-Implement tagged variants for:
+`symbol` may be a string or `null`. Ignore unrelated stderr as captured
+diagnostic output; never parse it as protocol data.
 
-1. `mealy`
-2. `moore`
-3. `efsm`
-4. `tfsm`
+## Required behaviour
 
-For `tfsm`, require exactly one timing profile:
+1. Implement the existing `SutAdapter` contract from `src/testing.ts`.
+2. Configuration includes executable, argument array, cwd, environment
+   allowlist, startup timeout, response timeout and maximum line size.
+3. No shell invocation and no string-built command line. Spawn the executable
+   directly with an argument array.
+4. Correlate every response by `requestId`; reject duplicates, missing IDs,
+   malformed JSON, wrong message types and oversized lines.
+5. Honour `AbortSignal`: terminate pending requests and cleanly stop the child.
+6. Detect early exit, signal termination, broken pipes and stderr truncation.
+7. `close()` is idempotent and must not leave a child process running.
+8. Never log environment values or secrets.
 
-- `timedGuards`
-- `timeouts`
-- `outputDelays`
-- `timeoutsAndOutputDelays`
-- `alurDill`
+## Tests
 
-Represent a time bound with explicit inclusive/exclusive endpoints and infinity.
-Represent output delay as `constant`, `interval` or `linearFamily` (`b + k*t`).
-Alur–Dill requires clocks, location invariants, edge guards and reset sets.
+Provide deterministic fixture processes for:
 
-EFSM requires typed variables, input/output parameters, guard expression and an
-ordered update list. Expressions may be stored as language-tagged strings in v1;
-do not invent an evaluator.
+- happy-path turnstile;
+- delayed response and timeout;
+- malformed JSON;
+- mismatched request ID;
+- early process exit;
+- cancellation;
+- idempotent close;
+- maximum-line rejection.
 
-## Validation rules
-
-- unique IDs and declared references;
-- initial state/location exists;
-- probability fields are forbidden in v1;
-- timing fields are forbidden outside `tfsm`;
-- Mealy transition output and Moore state output are mutually exclusive;
-- interval lower bound must not exceed upper bound;
-- timeout target and clock reset references must exist;
-- no `NaN` or implicit units; timing unit is declared once per model.
-
-## Examples
-
-Provide at least:
-
-- deterministic Mealy turnstile;
-- nondeterministic partial Mealy machine;
-- EFSM login with retry counter;
-- TFSM password timeout;
-- TFSM lamp with output delay;
-- combined timeout + linear-family output delay;
-- Alur–Dill two-clock example;
-- one invalid fixture for each validation family.
+Tests must run on Windows and avoid timing-sensitive sleeps where an explicit
+fixture handshake can be used.
 
 ## Acceptance
 
-- `npm test` and `npm run build` pass;
-- schema and TypeScript validator agree on all fixtures;
-- validation is deterministic and does not mutate input;
-- no `any` in public types;
-- README/handoff lists unsupported features and exact integration points;
-- make focused commits and report their hashes; do not push directly to `main`.
+- `npm test` and `npm run build` pass from the integration branch;
+- public API contains no `any`;
+- no shell execution;
+- no orphan process remains after any test;
+- documentation includes protocol, security boundaries and a minimal example;
+- focused commits with hashes; do not push directly to `main`.

@@ -17,6 +17,8 @@ import {
   type TestPlan,
   type TestRunResult,
 } from './testing.ts';
+import { machineToModelIr, modelIrToMachine } from './model-ir-adapter.ts';
+import type { MealyModel } from './model-ir.ts';
 
 type TestCase = { inputs: string[]; outputs?: string[]; target?: string };
 
@@ -34,7 +36,7 @@ Unlocked --coin / return--> Unlocked`;
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <header class="topbar">
     <div class="brand"><span class="brand-mark">A</span><div><span class="eyebrow">AUTOMATA ENGINEERING WORKBENCH</span><h1>Automata Studio</h1></div></div>
-    <div class="header-actions"><span class="version">CORE / UI 0.3</span><button id="build" class="primary">Анализировать <kbd>Ctrl↵</kbd></button></div>
+    <div class="header-actions"><span class="version">CORE / UI 0.4</span><button id="build" class="primary">Анализировать <kbd>Ctrl↵</kbd></button></div>
   </header>
 
   <main>
@@ -53,7 +55,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
     <section class="workspace">
       <article class="panel editor-panel">
-        <div class="panel-title"><div><span class="step">02</span><span>Спецификация</span></div><div class="editor-actions"><span id="format-badge" class="badge">DSL</span><button id="legacy" class="quiet">Импорт .fsm</button></div></div>
+        <div class="panel-title"><div><span class="step">02</span><span>Спецификация</span></div><div class="editor-actions"><span id="format-badge" class="badge">DSL</span><button id="import-model" class="quiet">Импорт Model IR</button><button id="export-model" class="quiet" disabled>Экспорт Model IR</button><button id="legacy" class="quiet">Импорт .fsm</button><input id="model-file" type="file" accept="application/json,.json" hidden></div></div>
         <textarea id="source" spellcheck="false" aria-label="Описание конечного автомата"></textarea>
         <div id="diagnostics" class="diagnostics" aria-live="polite"></div>
       </article>
@@ -111,6 +113,7 @@ const runTestsButton = $<HTMLButtonElement>('#run-tests');
 const exportTestsButton = $<HTMLButtonElement>('#export-tests');
 let executableMachine: Machine | undefined;
 let executablePlan: TestPlan | undefined;
+let canonicalModel: MealyModel | undefined;
 source.value = example;
 
 function escapeXml(value: unknown): string {
@@ -253,6 +256,19 @@ function displayOutput(value: string | null | undefined): string {
   return value === null || value === undefined ? '∅' : value;
 }
 
+function downloadJson(filename: string, contents: string): void {
+  const blob = new Blob([contents], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.hidden = true;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
 function renderExecutionResult(result: TestRunResult): void {
   $('#pass-count').textContent = String(result.counts.pass);
   $('#fail-count').textContent = String(result.counts.fail + result.counts.invalid);
@@ -296,7 +312,7 @@ function parseSource(forceLegacy = false): ParseResult {
   return result;
 }
 
-function build(forceLegacy = false): void {
+function build(forceLegacy = false, importedCanonical?: MealyModel): void {
   const result = parseSource(forceLegacy);
   diagnostics.innerHTML = result.diagnostics.length
     ? result.diagnostics.map((item) => `<div class="diagnostic ${item.severity}"><strong>${item.severity === 'error' ? 'Ошибка' : 'Внимание'} · строка ${item.line}</strong><span>${escapeXml(item.message)}</span></div>`).join('')
@@ -305,11 +321,18 @@ function build(forceLegacy = false): void {
     graph.innerHTML = '<text class="empty" x="380" y="260">Исправьте ошибки, чтобы построить граф</text>';
     analysisNode.innerHTML = '<div class="empty-state">Анализ недоступен</div>';
     testsNode.innerHTML = '<div class="empty-state">Тесты недоступны</div>';
+    canonicalModel = undefined;
+    $<HTMLButtonElement>('#export-model').disabled = true;
     resetExecution('Исправьте ошибки модели — запуск и экспорт сейчас недоступны.', true);
     return;
   }
   machineName.textContent = result.machine.name;
-  jsonOutput.textContent = JSON.stringify(result.machine, null, 2);
+  canonicalModel = importedCanonical ?? machineToModelIr(result.machine, {
+    createdByVersion: '0.4.0',
+    sourceFormat: forceLegacy ? 'legacy-fsm' : 'automata-dsl',
+  });
+  jsonOutput.textContent = JSON.stringify(canonicalModel, null, 2);
+  $<HTMLButtonElement>('#export-model').disabled = false;
   renderGraph(result.machine);
   renderAnalysis(result.machine);
   renderTests(result.machine);
@@ -324,6 +347,38 @@ function build(forceLegacy = false): void {
 
 $('#build').addEventListener('click', () => build());
 $('#legacy').addEventListener('click', () => build(true));
+$<HTMLButtonElement>('#import-model').addEventListener('click', () => $<HTMLInputElement>('#model-file').click());
+$<HTMLButtonElement>('#export-model').addEventListener('click', () => {
+  if (!canonicalModel) return;
+  downloadJson(`${canonicalModel.id}.model.json`, JSON.stringify(canonicalModel, null, 2));
+  setExecutionMessage(`Canonical Model IR экспортирован: ${canonicalModel.id}.model.json`, 'success');
+});
+$<HTMLInputElement>('#model-file').addEventListener('change', async (event) => {
+  const input = event.currentTarget as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = '';
+  if (!file) return;
+  try {
+    const document = JSON.parse(await file.text()) as unknown;
+    const imported = modelIrToMachine(document);
+    if (!imported.ok) {
+      canonicalModel = undefined;
+      $<HTMLButtonElement>('#export-model').disabled = true;
+      diagnostics.innerHTML = imported.diagnostics.map((item) =>
+        `<div class="diagnostic error"><strong>Model IR · ${escapeXml(item.path || '/')}</strong><span>${escapeXml(item.message)}</span></div>`).join('');
+      resetExecution('Model IR не импортирован: исправьте ошибки в canonical JSON.', true);
+      return;
+    }
+    source.value = machineToDsl(imported.machine);
+    build(false, imported.model);
+    $('#format-badge').textContent = 'MODEL IR 1.0';
+  } catch (error) {
+    canonicalModel = undefined;
+    $<HTMLButtonElement>('#export-model').disabled = true;
+    diagnostics.innerHTML = `<div class="diagnostic error"><strong>Некорректный JSON</strong><span>${escapeXml(error instanceof Error ? error.message : String(error))}</span></div>`;
+    resetExecution('Не удалось прочитать файл Model IR.', true);
+  }
+});
 $('#generate').addEventListener('click', () => {
   const options: GenerateMachineOptions = {
     name: 'GeneratedFSM', stateCount: Number($<HTMLInputElement>('#state-count').value), inputCount: Number($<HTMLInputElement>('#input-count').value),
@@ -367,18 +422,14 @@ runTestsButton.addEventListener('click', async () => {
 });
 exportTestsButton.addEventListener('click', () => {
   if (!executablePlan) return;
-  const blob = new Blob([serializeTestPlan(executablePlan)], { type: 'application/json;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `${executablePlan.id}.json`;
-  link.hidden = true;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
-  setExecutionMessage(`Тест-план экспортирован: ${link.download}`, 'success');
+  const filename = `${executablePlan.id}.json`;
+  downloadJson(filename, serializeTestPlan(executablePlan));
+  setExecutionMessage(`Тест-план экспортирован: ${filename}`, 'success');
 });
 source.addEventListener('keydown', (event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') build(); });
-source.addEventListener('input', () => resetExecution());
+source.addEventListener('input', () => {
+  canonicalModel = undefined;
+  $<HTMLButtonElement>('#export-model').disabled = true;
+  resetExecution();
+});
 build();

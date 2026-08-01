@@ -12,6 +12,17 @@ core. Modbus is one future adapter, not the product boundary: the same abstract
 test plan can target a simulator, CLI process, HTTP service, CAN device or other
 SUT through an adapter.
 
+## v0.4 capabilities
+
+- canonical Model IR 1.0 for Mealy, Moore, EFSM and five TFSM timing profiles;
+- JSON Schema plus deterministic runtime validation with JSON-pointer errors;
+- 21 valid/invalid canonical fixtures and schema parity tests;
+- lossless `Machine` ↔ canonical Mealy conversion, including silent outputs,
+  final-state compatibility metadata and source lines;
+- canonical Model IR import/export in the browser workbench;
+- explicit refusal of currently unsupported Moore/EFSM/TFSM execution instead
+  of silently discarding their semantics.
+
 ## v0.3 capabilities
 
 - versioned Test Plan IR with JSON Schema and stable serialization;
@@ -73,6 +84,8 @@ After `npm run cpp:build`:
 - [Automata taxonomy](docs/AUTOMATA-TAXONOMY.md)
 - [Test execution architecture](docs/TEST-EXECUTION.md)
 - [Test Plan IR JSON Schema](schema/automata-test-plan-v1.schema.json)
+- [Model IR semantics](docs/model-ir/SEMANTICS.md)
+- [Model IR migrations](docs/model-ir/MIGRATIONS.md)
 - [Next isolated task for Claude](docs/CLAUDE-NEXT-TASK.md)
 
 Obsidian project notes:
