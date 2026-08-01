@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml)
 [![Browser demo](https://img.shields.io/badge/live-browser_demo-50d1c5)](https://vitalya834.github.io/automata-studio/)
-[![Version](https://img.shields.io/badge/version-1.2.0-8b9cff)](https://github.com/vitalya834/automata-studio/releases)
+[![Version](https://img.shields.io/badge/version-1.3.0-8b9cff)](https://github.com/vitalya834/automata-studio/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-f4c95d)](LICENSE)
 
 **Создавайте модели поведения, генерируйте тестовые кампании, запускайте их на
@@ -41,6 +41,15 @@ npm run dev
 Переключатель **RU / EN** переводит весь интерфейс. Компактная закреплённая
 панель ведёт прямо к Start, Model, Timed, Editor, Tests или Run и превращается
 из шести колонок на компьютере в удобную сенсорную сетку на малом экране.
+
+## Windows-приложение v1.3
+
+Пошаговый x64-установщик и Portable-файл без установки доступны в
+[GitHub Releases](https://github.com/vitalya834/automata-studio/releases/latest).
+Изолированная desktop-оболочка содержит лабораторию и ресурсы runner и не
+требует установленного Node.js. Первые файлы v1.3 ещё не подписаны сертификатом
+Authenticode, поэтому перед запуском сверяйте SHA-256. Подробности находятся в
+[руководстве по desktop-версии](docs/DESKTOP.ru.md).
 
 ## Двуязычный адаптивный интерфейс v1.2
 

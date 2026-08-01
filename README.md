@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml)
 [![Browser demo](https://img.shields.io/badge/live-browser_demo-50d1c5)](https://vitalya834.github.io/automata-studio/)
-[![Version](https://img.shields.io/badge/version-1.2.0-8b9cff)](https://github.com/vitalya834/automata-studio/releases)
+[![Version](https://img.shields.io/badge/version-1.3.0-8b9cff)](https://github.com/vitalya834/automata-studio/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-f4c95d)](LICENSE)
 
 **Generate behavioral models, synthesize test campaigns, run them against real
@@ -41,6 +41,15 @@ reopened from **Tour / Обзор**; only a dismissal preference is stored local
 Use the **RU / EN** switch for the complete interface. The compact sticky
 section bar jumps directly to Start, Model, Timed, Editor, Tests or Run and
 adapts from six columns on desktop to a touch-friendly grid on small screens.
+
+## Windows desktop v1.3
+
+Download the assisted x64 Setup or the no-install Portable executable from
+[GitHub Releases](https://github.com/vitalya834/automata-studio/releases/latest).
+The desktop shell is sandboxed, bundles the workbench and runner resources, and
+works without a local Node.js installation. The first v1.3 artifacts are not
+yet Authenticode-signed, so verify their SHA-256 checksum before running them.
+See the [desktop guide](docs/DESKTOP.md) for build and security details.
 
 ## v1.2 bilingual responsive workspace
 

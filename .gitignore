@@ -1,6 +1,8 @@
 node_modules/
 dist/
 dist-cli/
+release/
+artifacts/
 build-cpp/
 *.log
 /*.exe

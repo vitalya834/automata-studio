@@ -1,0 +1,57 @@
+name: Windows desktop
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: windows-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Smoke-test desktop shell
+        run: npm run desktop:smoke
+
+      - name: Build Setup and Portable executables
+        run: npm run desktop:dist
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: automata-studio-windows-${{ github.ref_name }}
+          path: |
+            artifacts/*.exe
+            artifacts/*.blockmap
+          if-no-files-found: error
+
+      - name: Publish tagged release artifacts
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view $env:GITHUB_REF_NAME 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $env:GITHUB_REF_NAME --title "Automata Studio $env:GITHUB_REF_NAME" --generate-notes
+          }
+          gh release upload $env:GITHUB_REF_NAME artifacts/*.exe artifacts/*.blockmap --clobber
