@@ -14,6 +14,10 @@ npm run cli -- validate examples/test-plans/turnstile-transition-cover.json
 npm run demo:cli
 ```
 
+Если после позиционных аргументов идут параметры Automata, сохраняйте второй
+разделитель `--`, показанный в примерах. Иначе npm может принять `--adapter` или
+`--report` за собственные настройки.
+
 Демонстрация запускает turnstile как настоящий дочерний процесс и выполняет два
 сгенерированных тестовых случая — граница адаптера не подменяется mock-объектом.
 
@@ -28,7 +32,7 @@ npm run demo:http
 ## Тестирование своей программы
 
 ```powershell
-npm run cli -- run path/to/plan.json `
+npm run cli -- run path/to/plan.json -- `
   --adapter cli `
   --executable path/to/sut.exe `
   --arg --json-lines `
@@ -58,7 +62,7 @@ npm run cli -- run path/to/plan.json `
 Endpoint и регистры остаются вне тест-плана:
 
 ```powershell
-npm run cli -- run examples/test-plans/modbus-lamp.json `
+npm run cli -- run examples/test-plans/modbus-lamp.json -- `
   --adapter modbus `
   --config examples/adapters/modbus-lamp.json
 ```
@@ -68,7 +72,7 @@ npm run cli -- run examples/test-plans/modbus-lamp.json `
 HTTP-входы отображаются в запросы отдельной конфигурацией адаптера:
 
 ```powershell
-npm run cli -- run examples/test-plans/http-ml-classifier.json `
+npm run cli -- run examples/test-plans/http-ml-classifier.json -- `
   --adapter http `
   --config examples/adapters/http-ml-classifier.json
 ```

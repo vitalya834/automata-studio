@@ -16,6 +16,7 @@
 | Sequence dataset generation | [English](DATASET-GENERATION.md) | [Русский](DATASET-GENERATION.ru.md) |
 | Executable SUT runner | [English](RUNNER-CLI.md) | [Русский](RUNNER-CLI.ru.md) |
 | Evidence reports | [English](REPORTS.md) | [Русский](REPORTS.ru.md) |
+| Real-world GitHub API demo | [English](REAL-WORLD-DEMO.md) | [Русский](REAL-WORLD-DEMO.ru.md) |
 | Model IR semantics | [English](model-ir/SEMANTICS.md) | [Русский](model-ir/SEMANTICS.ru.md) |
 | Model IR migrations | [English](model-ir/MIGRATIONS.md) | [Русский](model-ir/MIGRATIONS.ru.md) |
 

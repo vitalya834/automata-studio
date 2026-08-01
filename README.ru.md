@@ -49,6 +49,7 @@ HTTP-сервер, выполняет все пути и создаёт JUnit/HT
 | Безопасно проверить Modbus TCP | `npm run demo:modbus` |
 | Сгенерировать случайные тесты | [Генерация тестов](docs/TEST-GENERATION.ru.md) |
 | Проверить REST или ML inference API | [HTTP-адаптер](docs/adapters/HTTP.ru.md) |
+| Проверить реальный внешний продукт | `npm run demo:github` |
 | Создать данные последовательностей | [Генерация датасетов](docs/DATASET-GENERATION.ru.md) |
 
 ## Продуктовый конвейер v1.0
@@ -169,12 +170,13 @@ npm run cpp:build
 ## Runner для внешнего SUT
 
 ```powershell
-npm run cli -- generate examples/game-session.fsm --strategy transition-cover --output game-plan.json
-npm run cli -- generate examples/game-session.fsm --strategy random-walk --cases 50 --max-steps 25 --seed 2026 --output game-fuzz.json
+npm run cli -- generate examples/game-session.fsm -- --strategy transition-cover --output game-plan.json
+npm run cli -- generate examples/game-session.fsm -- --strategy random-walk --cases 50 --max-steps 25 --seed 2026 --output game-fuzz.json
 npm run cli -- validate examples/test-plans/turnstile-transition-cover.json
 npm run demo:cli
 npm run demo:modbus
 npm run demo:http
+npm run demo:github
 ```
 
 Настройка executable, allowlist окружения, JSON и файлы отчётов описаны в

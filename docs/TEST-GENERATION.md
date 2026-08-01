@@ -6,10 +6,10 @@ Automata Studio v1.0 turns a deterministic DSL model into versioned Test Plan
 IR that can be executed through any SUT adapter.
 
 ```powershell
-npm run cli -- generate examples/game-session.fsm `
+npm run cli -- generate examples/game-session.fsm -- `
   --strategy transition-cover --output game-plan.json
 
-npm run cli -- generate examples/game-session.fsm `
+npm run cli -- generate examples/game-session.fsm -- `
   --strategy random-walk --cases 50 --max-steps 25 `
   --seed game-2026 --timeout 1000 --output game-fuzz.json
 ```
