@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0",
+  "id": "template-modbus-controller",
+  "name": "ModbusMotorController",
+  "description": "Abstract motor-controller workflow intended for mapping to Modbus coils and registers.",
+  "modelKind": "mealy",
+  "semanticProfile": "deterministic.partial",
+  "inputAlphabet": { "symbols": [{ "id": "start" }, { "id": "stop" }, { "id": "trip" }, { "id": "reset" }] },
+  "outputAlphabet": { "symbols": [{ "id": "running" }, { "id": "stopped" }, { "id": "fault" }, { "id": "ready" }] },
+  "states": [{ "id": "ready" }, { "id": "running" }, { "id": "fault" }],
+  "transitions": [
+    { "id": "t1", "from": "ready", "to": "running", "input": "start", "output": "running" },
+    { "id": "t2", "from": "running", "to": "ready", "input": "stop", "output": "stopped" },
+    { "id": "t3", "from": "running", "to": "fault", "input": "trip", "output": "fault" },
+    { "id": "t4", "from": "fault", "to": "ready", "input": "reset", "output": "ready" }
+  ],
+  "initial": { "stateId": "ready" },
+  "provenance": { "createdBy": "Automata Studio", "createdByVersion": "1.1.0", "sourceFormat": "template", "timestamp": "2026-08-01T00:00:00Z" }
+}
