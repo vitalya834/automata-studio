@@ -5,12 +5,32 @@ import { trustedExternalUrl } from './security.mjs';
 
 const APP_ID = 'io.github.vitalya834.automata-studio';
 const SMOKE_TEST = process.argv.includes('--smoke-test');
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data:",
+  "connect-src 'self'",
+  "object-src 'none'",
+  "base-uri 'none'",
+  "form-action 'none'",
+].join('; ');
 const desktopDir = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.join(desktopDir, '..', 'dist', 'index.html');
 
 function hardenSession() {
-  session.defaultSession.setPermissionCheckHandler(() => false);
-  session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
+  const desktopSession = session.defaultSession;
+  desktopSession.setPermissionCheckHandler(() => false);
+  desktopSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
+  desktopSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [CONTENT_SECURITY_POLICY],
+      },
+    });
+  });
 }
 
 function createWindow() {
@@ -42,9 +62,26 @@ function createWindow() {
   window.webContents.on('will-attach-webview', (event) => event.preventDefault());
 
   if (SMOKE_TEST) {
-    window.webContents.once('did-finish-load', () => {
-      console.log('AUTOMATA_STUDIO_DESKTOP_SMOKE_OK');
-      app.exit(0);
+    window.webContents.once('did-finish-load', async () => {
+      try {
+        const state = await window.webContents.executeJavaScript(`(() => {
+          const navigation = document.querySelector('.workspace-nav');
+          const languageSpans = [...document.querySelectorAll('[data-lang]')];
+          return {
+            navigationDisplay: navigation ? getComputedStyle(navigation).display : null,
+            visibleLanguages: [...new Set(languageSpans.filter((element) => getComputedStyle(element).display !== 'none').map((element) => element.dataset.lang))],
+          };
+        })()`);
+        const visibleLanguages = new Set(state.visibleLanguages);
+        if (state.navigationDisplay !== 'grid' || visibleLanguages.size !== 1) {
+          throw new Error(`Renderer styles are not active: ${JSON.stringify(state)}`);
+        }
+        console.log(`AUTOMATA_STUDIO_DESKTOP_SMOKE_OK ${JSON.stringify(state)}`);
+        app.exit(0);
+      } catch (error) {
+        console.error(error);
+        app.exit(1);
+      }
     });
     window.webContents.once('did-fail-load', (_event, code, description) => {
       console.error(`Desktop smoke test failed: ${code} ${description}`);
