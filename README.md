@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml)
 [![Browser demo](https://img.shields.io/badge/live-browser_demo-50d1c5)](https://vitalya834.github.io/automata-studio/)
-[![Version](https://img.shields.io/badge/version-1.0.0-8b9cff)](https://github.com/vitalya834/automata-studio/releases)
+[![Version](https://img.shields.io/badge/version-1.2.0-8b9cff)](https://github.com/vitalya834/automata-studio/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-f4c95d)](LICENSE)
 
 **Generate behavioral models, synthesize test campaigns, run them against real
@@ -38,6 +38,18 @@ npm run dev
 Open the local URL printed by Vite. On the first visit, a four-step tour
 explains **Model → Generate → Run → Report**. The tour can be skipped and
 reopened from **Tour / Обзор**; only a dismissal preference is stored locally.
+Use the **RU / EN** switch for the complete interface. The compact sticky
+section bar jumps directly to Start, Model, Timed, Editor, Tests or Run and
+adapts from six columns on desktop to a touch-friendly grid on small screens.
+
+## v1.2 bilingual responsive workspace
+
+- complete RU/EN switching for controls, templates, diagnostics, analysis,
+  timed-test messages, execution state and reports;
+- the selected language is stored locally and restored on the next visit;
+- six compact scenario tabs replace the long stack of template cards;
+- sticky section navigation removes the need to drag through one long page;
+- desktop, tablet and phone layouts avoid horizontal page scrolling.
 
 ## Five-minute tutorial
 

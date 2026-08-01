@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml)
 [![Browser demo](https://img.shields.io/badge/live-browser_demo-50d1c5)](https://vitalya834.github.io/automata-studio/)
-[![Version](https://img.shields.io/badge/version-1.0.0-8b9cff)](https://github.com/vitalya834/automata-studio/releases)
+[![Version](https://img.shields.io/badge/version-1.2.0-8b9cff)](https://github.com/vitalya834/automata-studio/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-f4c95d)](LICENSE)
 
 **Создавайте модели поведения, генерируйте тестовые кампании, запускайте их на
@@ -38,6 +38,19 @@ npm run dev
 объяснит четыре этапа: **Model → Generate → Run → Report**. Тур можно пропустить
 и снова открыть кнопкой **Tour / Обзор**; локально сохраняется только признак
 закрытия, без учётных данных.
+Переключатель **RU / EN** переводит весь интерфейс. Компактная закреплённая
+панель ведёт прямо к Start, Model, Timed, Editor, Tests или Run и превращается
+из шести колонок на компьютере в удобную сенсорную сетку на малом экране.
+
+## Двуязычный адаптивный интерфейс v1.2
+
+- полное переключение RU/EN для кнопок, шаблонов, диагностики, анализа,
+  временных тестов, выполнения и отчётов;
+- выбранный язык сохраняется локально и восстанавливается при следующем входе;
+- вместо длинной стопки карточек используются шесть компактных вкладок;
+- закреплённая навигация избавляет от прокрутки одной длинной страницы;
+- раскладка для компьютера, планшета и телефона не создаёт горизонтальной
+  прокрутки страницы.
 
 ## Пятиминутный учебный сценарий
 

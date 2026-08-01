@@ -35,6 +35,7 @@ import {
   resolveTemplateAction,
   templateLinkUrl,
 } from './onboarding.ts';
+import { journeyEnglish, readLocale, templateEnglish, writeLocale, type AppLocale } from './locale.ts';
 import timedGuardExample from '../examples/models/valid/tfsm-timed-guards-door.json';
 import timeoutExample from '../examples/models/valid/tfsm-password-timeout.json';
 import outputDelayExample from '../examples/models/valid/tfsm-lamp-output-delay.json';
@@ -62,30 +63,73 @@ Locked --push / alarm--> Locked
 Unlocked --push / lock--> Locked
 Unlocked --coin / return--> Unlocked`;
 
+function escapeXml(value: unknown): string {
+  return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
+}
+
+let appLocale: AppLocale = readLocale(localStorage, navigator.language.toLowerCase().startsWith('en') ? 'en' : 'ru');
+document.documentElement.dataset.locale = appLocale;
+document.documentElement.lang = appLocale;
+
+function bi(ru: string, en: string): string {
+  return `<span data-lang="ru">${escapeXml(ru)}</span><span data-lang="en">${escapeXml(en)}</span>`;
+}
+
+function localText(ru: string, en: string): string {
+  return appLocale === 'ru' ? ru : en;
+}
+
+function englishLinkLabel(label: string): string {
+  const labels: Record<string, string> = {
+    'Модель game-session.fsm': 'game-session.fsm model',
+    'Генерация тестов': 'Test generation',
+    'HTTP-адаптер': 'HTTP adapter',
+    'План http-game.json': 'http-game.json plan',
+    'Modbus-адаптер': 'Modbus adapter',
+    'Конфигурация modbus-lamp.json': 'modbus-lamp.json config',
+    'JSONL-датасеты': 'JSONL datasets',
+    'Конфигурация http-ml-classifier.json': 'http-ml-classifier.json config',
+    'Временное тестирование': 'Timed testing',
+    'Модель tfsm-timed-guards-door.json': 'tfsm-timed-guards-door.json model',
+    'CLI-адаптер': 'CLI adapter',
+    'Эталонный SUT turnstile.cjs': 'Reference SUT turnstile.cjs',
+  };
+  return labels[label] ?? label;
+}
+
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <header class="topbar">
     <div class="brand"><span class="brand-mark">A</span><div><span class="eyebrow">AUTOMATA ENGINEERING WORKBENCH</span><h1>Automata Studio</h1></div></div>
-    <div class="header-actions"><span class="version">CORE 1.0 / UI 1.1</span><button id="reopen-tour" class="quiet tour-reopen">Tour / Обзор</button><button id="build" class="primary">Анализировать <kbd>Ctrl↵</kbd></button></div>
+    <div class="header-actions"><span class="version">CORE 1.0 / UI 1.2</span><div class="locale-switch segmented" role="group" aria-label="Language"><button data-locale="ru">RU</button><button data-locale="en">EN</button></div><button id="reopen-tour" class="quiet tour-reopen">${bi('Обзор', 'Tour')}</button><button id="build" class="primary">${bi('Анализировать', 'Analyze')} <kbd>Ctrl↵</kbd></button></div>
   </header>
+
+  <nav class="workspace-nav panel" aria-label="Workspace sections">
+    <button data-scroll-target="onboarding-title"><span>00</span>${bi('Старт', 'Start')}</button>
+    <button data-scroll-target="generator-section"><span>01</span>${bi('Модель', 'Model')}</button>
+    <button data-scroll-target="timed-section"><span>T</span>${bi('Время', 'Timed')}</button>
+    <button data-scroll-target="model-section"><span>02</span>${bi('Редактор', 'Editor')}</button>
+    <button data-scroll-target="tests-section"><span>05</span>${bi('Тесты', 'Tests')}</button>
+    <button data-scroll-target="run-section"><span>06</span>${bi('Запуск', 'Run')}</button>
+  </nav>
 
   <main>
     ${renderOnboardingSection()}
 
-    <section class="generator panel" aria-labelledby="generator-title">
-      <div class="section-heading"><div><span class="step">01</span><h2 id="generator-title">Генератор модели</h2></div><p>Синтез автомата по воспроизводимым параметрам</p></div>
+    <section id="generator-section" class="generator panel" aria-labelledby="generator-title">
+      <div class="section-heading"><div><span class="step">01</span><h2 id="generator-title">${bi('Генератор модели', 'Model generator')}</h2></div><p>${bi('Синтез автомата по воспроизводимым параметрам', 'Reproducible finite-state machine synthesis')}</p></div>
       <div class="generator-grid">
-        <label><span>Состояния</span><input id="state-count" type="number" min="1" max="64" value="5"></label>
-        <label><span>Входы</span><input id="input-count" type="number" min="1" max="32" value="2"></label>
-        <label><span>Выходы</span><input id="output-count" type="number" min="1" max="32" value="2"></label>
+        <label><span>${bi('Состояния', 'States')}</span><input id="state-count" type="number" min="1" max="64" value="5"></label>
+        <label><span>${bi('Входы', 'Inputs')}</span><input id="input-count" type="number" min="1" max="32" value="2"></label>
+        <label><span>${bi('Выходы', 'Outputs')}</span><input id="output-count" type="number" min="1" max="32" value="2"></label>
         <label><span>Seed</span><input id="seed" type="number" value="2025"></label>
-        <label class="switch-row"><input id="deterministic" type="checkbox" checked><span class="switch"></span><span>Детерминированный</span></label>
-        <label class="switch-row"><input id="complete" type="checkbox" checked><span class="switch"></span><span>Полный</span></label>
-        <button id="generate" class="generate-button">Сгенерировать <span>→</span></button>
+        <label class="switch-row"><input id="deterministic" type="checkbox" checked><span class="switch"></span><span>${bi('Детерминированный', 'Deterministic')}</span></label>
+        <label class="switch-row"><input id="complete" type="checkbox" checked><span class="switch"></span><span>${bi('Полный', 'Complete')}</span></label>
+        <button id="generate" class="generate-button">${bi('Сгенерировать', 'Generate')} <span>→</span></button>
       </div>
-      <aside class="context-help"><strong>Generate</strong><span>Не знаете параметры? Выберите шаблон выше: он сразу построит модель и transition-cover кампанию. Генератор нужен для воспроизводимых случайных FSM.</span></aside>
+      <aside class="context-help"><strong>Generate</strong><span>${bi('Не знаете параметры? Выберите шаблон выше: он сразу построит модель и transition-cover кампанию.', 'Not sure about the parameters? Choose a template above to build a model and campaign immediately.')}</span></aside>
     </section>
 
-    <section class="panel timed-panel" aria-labelledby="timed-title">
+    <section id="timed-section" class="panel timed-panel" aria-labelledby="timed-title">
       <div class="section-heading timed-heading">
         <div><span class="step">T</span><h2 id="timed-title">Timed Testing Workbench</h2><span class="adapter-status"><i></i> VIRTUAL TIME</span></div>
         <div class="timed-actions">
@@ -96,8 +140,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
             <option value="combined">Timeout + linear delay · Session</option>
             <option value="alur-dill">Alur–Dill · Two clocks</option>
           </select>
-          <button id="export-timed" class="quiet action-button">Экспорт timed tests</button>
-          <button id="run-timed" class="primary action-button">Запустить boundary tests</button>
+          <button id="export-timed" class="quiet action-button">${bi('Экспорт timed-тестов', 'Export timed tests')}</button>
+          <button id="run-timed" class="primary action-button">${bi('Запустить граничные тесты', 'Run boundary tests')}</button>
         </div>
       </div>
       <div class="timed-layout">
@@ -106,7 +150,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <svg id="timed-graph" viewBox="0 0 760 360" role="img" aria-label="Граф временного автомата"></svg>
         </div>
         <div class="timed-results">
-          <div id="timed-message" class="execution-message">Выберите TFSM и запустите виртуальные граничные тесты.</div>
+          <div id="timed-message" class="execution-message">${bi('Выберите TFSM и запустите виртуальные граничные тесты.', 'Choose a TFSM and run virtual boundary tests.')}</div>
           <div id="timed-summary" class="execution-summary" hidden>
             <div class="result-card pass"><span>PASS</span><strong id="timed-pass">0</strong></div>
             <div class="result-card fail"><span>FAIL</span><strong id="timed-fail">0</strong></div>
@@ -118,43 +162,43 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       </div>
     </section>
 
-    <section class="workspace">
+    <section id="model-section" class="workspace">
       <article class="panel editor-panel">
-        <div class="panel-title"><div><span class="step">02</span><span>Спецификация</span></div><div class="editor-actions"><span id="format-badge" class="badge">DSL</span><button id="import-model" class="quiet">Импорт Model IR</button><button id="export-model" class="quiet" disabled>Экспорт Model IR</button><button id="legacy" class="quiet">Импорт .fsm</button><input id="model-file" type="file" accept="application/json,.json" hidden></div></div>
+        <div class="panel-title"><div><span class="step">02</span><span>${bi('Спецификация', 'Specification')}</span></div><div class="editor-actions"><span id="format-badge" class="badge">DSL</span><button id="import-model" class="quiet">${bi('Импорт Model IR', 'Import Model IR')}</button><button id="export-model" class="quiet" disabled>${bi('Экспорт Model IR', 'Export Model IR')}</button><button id="legacy" class="quiet">${bi('Импорт .fsm', 'Import .fsm')}</button><input id="model-file" type="file" accept="application/json,.json" hidden></div></div>
         <textarea id="source" spellcheck="false" aria-label="Описание конечного автомата"></textarea>
         <div id="diagnostics" class="diagnostics" aria-live="polite"></div>
       </article>
 
       <article class="panel graph-panel">
-        <div class="panel-title"><div><span class="step">03</span><span id="machine-name">Граф состояний</span></div><div class="segmented"><button id="view-graph" class="active">Граф</button><button id="view-json">JSON</button></div></div>
+        <div class="panel-title"><div><span class="step">03</span><span id="machine-name">${bi('Граф состояний', 'State graph')}</span></div><div class="segmented"><button id="view-graph" class="active">${bi('Граф', 'Graph')}</button><button id="view-json">JSON</button></div></div>
         <div class="graph-stage"><svg id="graph" viewBox="0 0 760 520" role="img" aria-label="Граф конечного автомата"></svg><pre id="json-output" hidden></pre></div>
       </article>
     </section>
 
-    <section class="results-grid">
+    <section id="tests-section" class="results-grid">
       <article class="panel analysis-panel">
-        <div class="panel-title"><div><span class="step">04</span><span>Свойства модели</span></div><span id="analysis-summary" class="badge neutral">—</span></div>
-        <div id="analysis" class="property-grid"><div class="empty-state">Запустите анализ модели</div></div>
+        <div class="panel-title"><div><span class="step">04</span><span>${bi('Свойства модели', 'Model properties')}</span></div><span id="analysis-summary" class="badge neutral">—</span></div>
+        <div id="analysis" class="property-grid"><div class="empty-state">${bi('Запустите анализ модели', 'Analyze a model to see its properties')}</div></div>
       </article>
       <article class="panel tests-panel">
         <div class="panel-title"><div><span class="step">05</span><span>Transition cover</span></div><span id="test-count" class="badge neutral">0 TESTS</span></div>
-        <div class="test-head"><span>#</span><span>Входная последовательность</span><span>Ожидаемые выходы</span></div>
-        <div id="tests" class="test-list"><div class="empty-state"><strong>Тестовая кампания пока пуста</strong><span>Выберите шаблон или нажмите «Анализировать», чтобы построить transition cover.</span></div></div>
-        <aside class="context-help compact"><strong>Generate tests</strong><span>Transition cover проходит каждый достижимый переход хотя бы один раз; random walk доступен в CLI.</span></aside>
+        <div class="test-head"><span>#</span><span>${bi('Входная последовательность', 'Input sequence')}</span><span>${bi('Ожидаемые выходы', 'Expected outputs')}</span></div>
+        <div id="tests" class="test-list"><div class="empty-state"><strong>${bi('Тестовая кампания пока пуста', 'The test campaign is empty')}</strong><span>${bi('Выберите шаблон или нажмите «Анализировать», чтобы построить transition cover.', 'Choose a template or click Analyze to build a transition cover.')}</span></div></div>
+        <aside class="context-help compact"><strong>Generate tests</strong><span>${bi('Transition cover проходит каждый достижимый переход хотя бы один раз; random walk доступен в CLI.', 'Transition cover visits every reachable transition at least once; seeded random walk is available in the CLI.')}</span></aside>
       </article>
     </section>
-    <section class="panel execution-panel" aria-labelledby="execution-title">
+    <section id="run-section" class="panel execution-panel" aria-labelledby="execution-title">
       <div class="panel-title execution-title">
         <div><span class="step">06</span><span id="execution-title">Execution</span><span class="adapter-status"><i></i> IN-MEMORY</span></div>
         <div class="execution-actions">
-          <button id="export-tests" class="quiet action-button" disabled>Экспорт JSON</button>
-          <button id="run-tests" class="primary action-button" disabled>Запустить в симуляторе</button>
+          <button id="export-tests" class="quiet action-button" disabled>${bi('Экспорт JSON', 'Export JSON')}</button>
+          <button id="run-tests" class="primary action-button" disabled>${bi('Запустить в симуляторе', 'Run in simulator')}</button>
         </div>
       </div>
-      <div id="execution-message" class="execution-message">Постройте детерминированную модель, чтобы подготовить запуск.</div>
+      <div id="execution-message" class="execution-message">${bi('Постройте детерминированную модель, чтобы подготовить запуск.', 'Build a deterministic model to prepare a run.')}</div>
       <div class="adapter-catalog" aria-label="Доступные SUT-адаптеры">
-        <div><strong>IN-MEMORY</strong><span>Браузер · эталонная FSM</span></div>
-        <div><strong>CLI PROCESS</strong><span>Node runner · внешние программы</span></div>
+        <div><strong>IN-MEMORY</strong><span>${bi('Браузер · эталонная FSM', 'Browser · reference FSM')}</span></div>
+        <div><strong>CLI PROCESS</strong><span>${bi('Node runner · внешние программы', 'Node runner · external programs')}</span></div>
         <div><strong>MODBUS TCP</strong><span>Node runner · FC1–FC6 · SAFE WRITES</span></div>
         <div><strong>HTTP / REST</strong><span>API · GAME SERVERS · ML INFERENCE</span></div>
       </div>
@@ -164,9 +208,9 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="result-card timeout"><span>TIMEOUT</span><strong id="timeout-count">0</strong></div>
         <div class="result-card duration"><span>DURATION</span><strong id="run-duration">0 ms</strong></div>
       </div>
-      <div class="trace-head"><span>#</span><span>Вход</span><span>Ожидалось</span><span>Получено</span><span>Время</span><span>Verdict</span></div>
-      <div id="execution-trace" class="execution-trace"><div class="empty-state"><strong>Запуск ещё не выполнен</strong><span>Загрузите шаблон, затем запустите подготовленную кампанию в симуляторе.</span></div></div>
-      <aside class="context-help report-help"><strong>Run → Report</strong><span>Браузер показывает трассу и verdict. Для реального CLI, HTTP или Modbus SUT используйте указанную в карточке команду; runner создаёт JSON, JUnit XML и автономный HTML-отчёт.</span><code>npm run cli -- run plan.json --adapter … --report reports</code></aside>
+      <div class="trace-head"><span>#</span><span>${bi('Вход', 'Input')}</span><span>${bi('Ожидалось', 'Expected')}</span><span>${bi('Получено', 'Observed')}</span><span>${bi('Время', 'Time')}</span><span>Verdict</span></div>
+      <div id="execution-trace" class="execution-trace"><div class="empty-state"><strong>${bi('Запуск ещё не выполнен', 'No run has been performed')}</strong><span>${bi('Загрузите шаблон, затем запустите подготовленную кампанию в симуляторе.', 'Load a template, then run the prepared campaign in the simulator.')}</span></div></div>
+      <aside class="context-help report-help"><strong>Run → Report</strong><span>${bi('Браузер показывает трассу и verdict. Для реального CLI, HTTP или Modbus SUT используйте указанную в карточке команду; runner создаёт JSON, JUnit XML и автономный HTML-отчёт.', 'The browser shows a trace and verdict. For a real CLI, HTTP or Modbus SUT, use the command from its template; the runner produces JSON, JUnit XML and standalone HTML evidence.')}</span><code>npm run cli -- run plan.json --adapter … --report reports</code></aside>
     </section>
   </main>
   <footer><span>TEXT</span><i></i><span>MODEL</span><i></i><span>ANALYSIS</span><i></i><span>TESTS</span><i></i><span>EXECUTION</span></footer>`;
@@ -197,29 +241,28 @@ let currentTimedModel: TfsmModel = timedExamples.get('guards')!;
 let currentTimedCases: TimedTestCase[] = [];
 source.value = example;
 
-function escapeXml(value: unknown): string {
-  return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
-}
-
 function renderOnboardingSection(): string {
   const journey = onboardingJourney.map((step, index) => `
-    <li><span class="journey-index">${index + 1}</span><div><strong>${escapeXml(step.title)}</strong><small>${escapeXml(step.detail)}</small></div></li>`).join('');
-  const cards = onboardingTemplates.map((template) => {
+    <li><span class="journey-index">${index + 1}</span><div><strong>${escapeXml(step.title)}</strong><small>${bi(step.detail, journeyEnglish[index])}</small></div></li>`).join('');
+  const cards = onboardingTemplates.map((template, templateIndex) => {
+    const english = templateEnglish[template.id];
+    const rowLabels = [['Описание', 'Description'], ['Цель', 'Target'], ['Стратегия', 'Strategy'], ['Адаптер', 'Adapter']] as const;
+    const englishValues = [english.description, english.target, english.strategy, english.adapter];
     const rows = [
       ['Описание', template.description],
       ['Цель / Target', template.target],
       ['Стратегия', template.strategy],
       ['Адаптер', template.adapter],
-    ].map(([label, value]) => `<div><dt>${escapeXml(label)}</dt><dd>${escapeXml(value)}</dd></div>`).join('');
-    const openButton = `<button class="primary open-example" data-template="${escapeXml(template.id)}">Use template / Открыть</button>`;
+    ].map(([, value], rowIndex) => `<div><dt>${bi(rowLabels[rowIndex][0], rowLabels[rowIndex][1])}</dt><dd>${bi(value, englishValues[rowIndex])}</dd></div>`).join('');
+    const openButton = `<button class="primary open-example" data-template="${escapeXml(template.id)}">${bi('Открыть шаблон', 'Use template')}</button>`;
     const links = template.links.map((link) =>
-      `<a href="${escapeXml(templateLinkUrl(link))}" target="_blank" rel="noreferrer noopener">${escapeXml(link.label)} ↗</a>`).join('');
+      `<a href="${escapeXml(templateLinkUrl(link))}" target="_blank" rel="noreferrer noopener">${bi(link.label, englishLinkLabel(link.label))} ↗</a>`).join('');
     return `
-    <article class="template-card" aria-labelledby="template-${escapeXml(template.id)}">
+    <article class="template-card" data-template-card="${escapeXml(template.id)}" aria-labelledby="template-${escapeXml(template.id)}"${templateIndex === 0 ? '' : ' hidden'}>
       <header><h3 id="template-${escapeXml(template.id)}">${escapeXml(template.title)}</h3><span class="badge neutral">${escapeXml(template.adapterBadge)}</span></header>
-      <p class="template-subtitle">${escapeXml(template.subtitle)}</p>
+      <p class="template-subtitle">${bi(template.subtitle, english.subtitle)}</p>
       <dl class="template-facts">${rows}</dl>
-      <div class="template-command"><code>${escapeXml(template.command)}</code><button class="quiet copy-command" data-command="${escapeXml(template.command)}" aria-label="Скопировать команду для ${escapeXml(template.title)}">Copy</button></div>
+      <div class="template-command"><code>${escapeXml(template.command)}</code><button class="quiet copy-command" data-command="${escapeXml(template.command)}">${bi('Копировать', 'Copy')}</button></div>
       <div class="template-actions">${openButton}<nav class="template-links" aria-label="Документация для ${escapeXml(template.title)}">${links}</nav></div>
     </article>`;
   }).join('');
@@ -227,10 +270,11 @@ function renderOnboardingSection(): string {
     <section class="panel onboarding" aria-labelledby="onboarding-title">
       <div id="first-run-tour" class="tour-card" role="dialog" aria-labelledby="tour-title" hidden>
         <div><span id="tour-progress" class="badge">1 / ${onboardingJourney.length}</span><h3 id="tour-title"></h3><p id="tour-detail"></p></div>
-        <div class="tour-actions"><button id="skip-tour" class="quiet">Skip / Пропустить</button><button id="next-tour" class="primary">Next / Далее</button></div>
+        <div class="tour-actions"><button id="skip-tour" class="quiet">${bi('Пропустить', 'Skip')}</button><button id="next-tour" class="primary"></button></div>
       </div>
-      <div class="section-heading"><div><span class="step">00</span><h2 id="onboarding-title">Start testing · Начать тестирование</h2></div><p>Шесть моделей — один клик до готовой тестовой кампании</p></div>
+      <div class="section-heading"><div><span class="step">00</span><h2 id="onboarding-title">${bi('Начать тестирование', 'Start testing')}</h2></div><p>${bi('Шесть моделей — один клик до готовой тестовой кампании', 'Six models — one click to a ready test campaign')}</p></div>
       <ol class="journey" aria-label="Путь пользователя">${journey}</ol>
+      <div class="template-picker" role="tablist" aria-label="Testing scenarios">${onboardingTemplates.map((template, index) => `<button role="tab" data-template-select="${escapeXml(template.id)}" aria-selected="${index === 0}" class="${index === 0 ? 'active' : ''}"><strong>${escapeXml(template.title)}</strong><small>${bi(template.subtitle, templateEnglish[template.id].subtitle)}</small></button>`).join('')}</div>
       <div class="template-grid">${cards}</div>
     </section>`;
 }
@@ -298,7 +342,7 @@ function renderTimedCases(cases: TimedTestCase[], result?: TimedCampaignResult):
     const timing = last?.kind === 'input' ? `t=${last.at}` : last ? `wait→${last.until}` : '—';
     const verdict = caseResult?.verdict ?? 'pending';
     return `<div class="timed-case"><span class="test-index">${String(index + 1).padStart(2, '0')}</span><div><strong>${escapeXml(testCase.name)}</strong><small>${escapeXml(testCase.target)} · ${escapeXml(timing)} ${escapeXml(currentTimedModel.timeUnit)}</small></div><span class="verdict ${escapeXml(verdict)}">${escapeXml(verdict.toUpperCase())}</span></div>`;
-  }).join('') : '<div class="empty-state">Для этого профиля нужен специализированный zone/region engine</div>';
+  }).join('') : `<div class="empty-state">${escapeXml(localText('Для этого профиля нужен специализированный zone/region engine', 'This profile requires a dedicated zone/region engine'))}</div>`;
 }
 
 function loadTimedModel(model: TfsmModel): void {
@@ -316,13 +360,13 @@ function loadTimedModel(model: TfsmModel): void {
   exportTimedButton.disabled = alurDill;
   timedMessage.className = `execution-message${alurDill ? ' error' : ' success'}`;
   timedMessage.textContent = alurDill
-    ? 'Alur–Dill модель отображена, но для исполнения требуется zone/region engine. Аппроксимация запрещена.'
-    : `TFSM ${model.name}: подготовлено ${currentTimedCases.length} граничных тестов в ${model.timeUnit}.`;
+    ? localText('Alur–Dill модель отображена, но для исполнения требуется zone/region engine. Аппроксимация запрещена.', 'The Alur–Dill model is displayed, but execution requires a zone/region engine. Approximation is disabled.')
+    : localText(`TFSM ${model.name}: подготовлено ${currentTimedCases.length} граничных тестов в ${model.timeUnit}.`, `TFSM ${model.name}: ${currentTimedCases.length} boundary tests prepared in ${model.timeUnit}.`);
 }
 
 function renderGraph(machine: Machine): void {
   if (!machine.states.length) {
-    graph.innerHTML = '<text class="empty" x="380" y="260">В модели нет состояний</text>';
+    graph.innerHTML = `<text class="empty" x="380" y="260">${escapeXml(localText('В модели нет состояний', 'The model has no states'))}</text>`;
     return;
   }
   const centerX = 380;
@@ -384,17 +428,21 @@ function normalizeTests(raw: unknown): TestCase[] {
 
 function renderAnalysis(machine: Machine): void {
   const data = analyzeMachine(machine);
-  const labels: Record<string, string> = {
+  const labels: Record<string, string> = appLocale === 'ru' ? {
     deterministic: 'Детерминированность', complete: 'Полнота', connected: 'Связность', reachable: 'Достижимость',
     minimal: 'Минимальность', observable: 'Наблюдаемость', states: 'Состояния', stateCount: 'Состояния', transitions: 'Переходы', transitionCount: 'Переходы',
     inputs: 'Входной алфавит', outputs: 'Выходной алфавит', reachableStates: 'Достижимые состояния', unreachableStates: 'Недостижимые состояния',
+  } : {
+    deterministic: 'Deterministic', complete: 'Complete', connected: 'Connected', reachable: 'Reachable',
+    minimal: 'Minimal', observable: 'Observable', states: 'States', stateCount: 'States', transitions: 'Transitions', transitionCount: 'Transitions',
+    inputs: 'Input alphabet', outputs: 'Output alphabet', reachableStates: 'Reachable states', unreachableStates: 'Unreachable states',
   };
   const entries = Object.entries(data).filter(([, value]) => typeof value !== 'object' || Array.isArray(value));
   analysisNode.innerHTML = entries.length ? entries.map(([key, value]) => {
     const boolean = typeof value === 'boolean';
     const display = boolean ? (value ? 'YES' : 'NO') : Array.isArray(value) ? value.join(', ') || '—' : String(value);
     return `<div class="property ${boolean ? (value ? 'positive' : 'negative') : ''}"><span>${escapeXml(labels[key] ?? key.replace(/([A-Z])/g, ' $1'))}</span><strong>${escapeXml(display)}</strong><i></i></div>`;
-  }).join('') : '<div class="empty-state">Нет доступных метрик</div>';
+  }).join('') : `<div class="empty-state">${escapeXml(localText('Нет доступных метрик', 'No metrics are available'))}</div>`;
   $('#analysis-summary').textContent = `${machine.states.length} STATES · ${machine.transitions.length} EDGES`;
 }
 
@@ -406,7 +454,7 @@ function renderTests(machine: Machine): void {
   const rows = tests.length ? tests.map((test, index) => `
     <div class="test-row"><span class="test-index">${String(index + 1).padStart(2, '0')}</span>
     <code>${test.inputs.length ? test.inputs.map(escapeXml).join('<b>→</b>') : 'ε'}</code>
-    <code class="outputs">${test.outputs?.length ? test.outputs.map(escapeXml).join('<b>→</b>') : '<em>—</em>'}</code></div>`).join('') : '<div class="empty-state">Transition cover не сформирован</div>';
+    <code class="outputs">${test.outputs?.length ? test.outputs.map(escapeXml).join('<b>→</b>') : '<em>—</em>'}</code></div>`).join('') : `<div class="empty-state">${escapeXml(localText('Transition cover не сформирован', 'Transition cover was not generated'))}</div>`;
   testsNode.innerHTML = notices + rows;
 }
 
@@ -415,25 +463,25 @@ function setExecutionMessage(message: string, state: 'neutral' | 'error' | 'succ
   executionMessage.className = `execution-message${state === 'neutral' ? '' : ` ${state}`}`;
 }
 
-function resetExecution(message = 'Модель изменилась. Выполните анализ, чтобы подготовить новый запуск.', error = false): void {
+function resetExecution(message?: string, error = false): void {
   executableMachine = undefined;
   executablePlan = undefined;
   runTestsButton.disabled = true;
   exportTestsButton.disabled = true;
   executionSummary.hidden = true;
-  executionTrace.innerHTML = '<div class="empty-state">Тесты запускаются только вручную</div>';
-  setExecutionMessage(message, error ? 'error' : 'neutral');
+  executionTrace.innerHTML = `<div class="empty-state">${escapeXml(localText('Тесты запускаются только вручную', 'Tests run only when started manually'))}</div>`;
+  setExecutionMessage(message ?? localText('Модель изменилась. Выполните анализ, чтобы подготовить новый запуск.', 'The model changed. Analyze it to prepare a new run.'), error ? 'error' : 'neutral');
 }
 
 function prepareExecution(machine: Machine): void {
   const analysis = analyzeMachine(machine);
   if (!analysis.deterministic) {
-    resetExecution('Симулятор пока запускает только детерминированные FSM: устраните неоднозначные переходы.', true);
+    resetExecution(localText('Симулятор пока запускает только детерминированные FSM: устраните неоднозначные переходы.', 'The simulator currently runs deterministic FSMs only; remove ambiguous transitions.'), true);
     return;
   }
   const cover = generateTransitionCover(machine);
   if (!cover.tests.length) {
-    resetExecution('В модели нет достижимых переходов для выполнения.', true);
+    resetExecution(localText('В модели нет достижимых переходов для выполнения.', 'The model has no reachable transitions to execute.'), true);
     return;
   }
   const safeId = machine.name.replace(/[^\p{L}\p{N}_-]+/gu, '-').replace(/^-+|-+$/g, '') || 'machine';
@@ -448,8 +496,8 @@ function prepareExecution(machine: Machine): void {
   runTestsButton.disabled = false;
   exportTestsButton.disabled = false;
   executionSummary.hidden = true;
-  executionTrace.innerHTML = '<div class="empty-state">Готово к ручному запуску</div>';
-  setExecutionMessage(`Подготовлено тестов: ${executablePlan.cases.length}. Адаптер не запущен.`, 'success');
+  executionTrace.innerHTML = `<div class="empty-state">${escapeXml(localText('Готово к ручному запуску', 'Ready for a manual run'))}</div>`;
+  setExecutionMessage(localText(`Подготовлено тестов: ${executablePlan.cases.length}. Адаптер не запущен.`, `${executablePlan.cases.length} tests prepared. The adapter has not started.`), 'success');
 }
 
 function displayOutput(value: string | null | undefined): string {
@@ -488,12 +536,12 @@ function renderExecutionResult(result: TestRunResult): void {
       <span class="verdict ${escapeXml(step.verdict)}">${escapeXml(step.verdict.toUpperCase())}</span>
     </div>`;
   }));
-  executionTrace.innerHTML = rows.length ? rows.join('') : '<div class="empty-state">Выполнение не создало трассу шагов</div>';
+  executionTrace.innerHTML = rows.length ? rows.join('') : `<div class="empty-state">${escapeXml(localText('Выполнение не создало трассу шагов', 'The run did not produce a step trace'))}</div>`;
   const problemCount = result.counts.fail + result.counts.timeout + result.counts.invalid + result.counts.inconclusive;
   setExecutionMessage(
     problemCount === 0
-      ? `Запуск завершён: ${result.counts.pass} тестов пройдено.`
-      : `Запуск завершён с проблемами: ${problemCount}. Общий verdict: ${result.verdict.toUpperCase()}.`,
+      ? localText(`Запуск завершён: ${result.counts.pass} тестов пройдено.`, `Run complete: ${result.counts.pass} tests passed.`)
+      : localText(`Запуск завершён с проблемами: ${problemCount}. Общий verdict: ${result.verdict.toUpperCase()}.`, `Run completed with ${problemCount} problems. Overall verdict: ${result.verdict.toUpperCase()}.`),
     problemCount === 0 ? 'success' : 'error',
   );
 }
@@ -515,15 +563,15 @@ function parseSource(forceLegacy = false): ParseResult {
 function build(forceLegacy = false, importedCanonical?: MealyModel): void {
   const result = parseSource(forceLegacy);
   diagnostics.innerHTML = result.diagnostics.length
-    ? result.diagnostics.map((item) => `<div class="diagnostic ${item.severity}"><strong>${item.severity === 'error' ? 'Ошибка' : 'Внимание'} · строка ${item.line}</strong><span>${escapeXml(item.message)}</span></div>`).join('')
-    : '<div class="diagnostic success"><strong>Модель корректна</strong><span>Синтаксических и структурных ошибок не найдено.</span></div>';
+    ? result.diagnostics.map((item) => `<div class="diagnostic ${item.severity}"><strong>${escapeXml(item.severity === 'error' ? localText('Ошибка', 'Error') : localText('Внимание', 'Warning'))} · ${escapeXml(localText('строка', 'line'))} ${item.line}</strong><span>${escapeXml(item.message)}</span></div>`).join('')
+    : `<div class="diagnostic success"><strong>${escapeXml(localText('Модель корректна', 'Model is valid'))}</strong><span>${escapeXml(localText('Синтаксических и структурных ошибок не найдено.', 'No syntax or structural errors were found.'))}</span></div>`;
   if (!result.machine) {
-    graph.innerHTML = '<text class="empty" x="380" y="260">Исправьте ошибки, чтобы построить граф</text>';
-    analysisNode.innerHTML = '<div class="empty-state">Анализ недоступен</div>';
-    testsNode.innerHTML = '<div class="empty-state">Тесты недоступны</div>';
+    graph.innerHTML = `<text class="empty" x="380" y="260">${escapeXml(localText('Исправьте ошибки, чтобы построить граф', 'Fix the errors to build the graph'))}</text>`;
+    analysisNode.innerHTML = `<div class="empty-state">${escapeXml(localText('Анализ недоступен', 'Analysis is unavailable'))}</div>`;
+    testsNode.innerHTML = `<div class="empty-state">${escapeXml(localText('Тесты недоступны', 'Tests are unavailable'))}</div>`;
     canonicalModel = undefined;
     $<HTMLButtonElement>('#export-model').disabled = true;
-    resetExecution('Исправьте ошибки модели — запуск и экспорт сейчас недоступны.', true);
+    resetExecution(localText('Исправьте ошибки модели — запуск и экспорт сейчас недоступны.', 'Fix the model errors; run and export are currently unavailable.'), true);
     return;
   }
   machineName.textContent = result.machine.name;
@@ -537,9 +585,9 @@ function build(forceLegacy = false, importedCanonical?: MealyModel): void {
   renderAnalysis(result.machine);
   renderTests(result.machine);
   if (!analyzeMachine(result.machine).deterministic) {
-    resetExecution('Симулятор пока запускает только детерминированные FSM: устраните неоднозначные переходы.', true);
+    resetExecution(localText('Симулятор пока запускает только детерминированные FSM: устраните неоднозначные переходы.', 'The simulator currently runs deterministic FSMs only; remove ambiguous transitions.'), true);
   } else if (result.diagnostics.some((item) => item.severity === 'error')) {
-    resetExecution('Модель содержит ошибки. Исправьте их перед запуском симулятора.', true);
+    resetExecution(localText('Модель содержит ошибки. Исправьте их перед запуском симулятора.', 'The model contains errors. Fix them before running the simulator.'), true);
   } else {
     prepareExecution(result.machine);
   }
@@ -551,7 +599,7 @@ $<HTMLButtonElement>('#import-model').addEventListener('click', () => $<HTMLInpu
 $<HTMLButtonElement>('#export-model').addEventListener('click', () => {
   if (!canonicalModel) return;
   downloadJson(`${canonicalModel.id}.model.json`, JSON.stringify(canonicalModel, null, 2));
-  setExecutionMessage(`Canonical Model IR экспортирован: ${canonicalModel.id}.model.json`, 'success');
+  setExecutionMessage(localText(`Canonical Model IR экспортирован: ${canonicalModel.id}.model.json`, `Canonical Model IR exported: ${canonicalModel.id}.model.json`), 'success');
 });
 $<HTMLInputElement>('#model-file').addEventListener('change', async (event) => {
   const input = event.currentTarget as HTMLInputElement;
@@ -564,7 +612,7 @@ $<HTMLInputElement>('#model-file').addEventListener('change', async (event) => {
     if (canonical.ok && canonical.model.modelKind === 'tfsm') {
       loadTimedModel(canonical.model);
       $<HTMLSelectElement>('#timed-example').value = '';
-      diagnostics.innerHTML = '<div class="diagnostic success"><strong>TFSM импортирован</strong><span>Временная модель загружена в Timed Testing Workbench.</span></div>';
+      diagnostics.innerHTML = `<div class="diagnostic success"><strong>${escapeXml(localText('TFSM импортирован', 'TFSM imported'))}</strong><span>${escapeXml(localText('Временная модель загружена в Timed Testing Workbench.', 'The timed model was loaded into the Timed Testing Workbench.'))}</span></div>`;
       return;
     }
     const imported = modelIrToMachine(document);
@@ -573,7 +621,7 @@ $<HTMLInputElement>('#model-file').addEventListener('change', async (event) => {
       $<HTMLButtonElement>('#export-model').disabled = true;
       diagnostics.innerHTML = imported.diagnostics.map((item) =>
         `<div class="diagnostic error"><strong>Model IR · ${escapeXml(item.path || '/')}</strong><span>${escapeXml(item.message)}</span></div>`).join('');
-      resetExecution('Model IR не импортирован: исправьте ошибки в canonical JSON.', true);
+      resetExecution(localText('Model IR не импортирован: исправьте ошибки в canonical JSON.', 'Model IR was not imported; fix the canonical JSON errors.'), true);
       return;
     }
     source.value = machineToDsl(imported.machine);
@@ -582,8 +630,8 @@ $<HTMLInputElement>('#model-file').addEventListener('change', async (event) => {
   } catch (error) {
     canonicalModel = undefined;
     $<HTMLButtonElement>('#export-model').disabled = true;
-    diagnostics.innerHTML = `<div class="diagnostic error"><strong>Некорректный JSON</strong><span>${escapeXml(error instanceof Error ? error.message : String(error))}</span></div>`;
-    resetExecution('Не удалось прочитать файл Model IR.', true);
+    diagnostics.innerHTML = `<div class="diagnostic error"><strong>${escapeXml(localText('Некорректный JSON', 'Invalid JSON'))}</strong><span>${escapeXml(error instanceof Error ? error.message : String(error))}</span></div>`;
+    resetExecution(localText('Не удалось прочитать файл Model IR.', 'Could not read the Model IR file.'), true);
   }
 });
 $('#generate').addEventListener('click', () => {
@@ -597,7 +645,7 @@ $('#generate').addEventListener('click', () => {
     $('#format-badge').textContent = 'GENERATED DSL';
     build();
   } catch (error) {
-    diagnostics.innerHTML = `<div class="diagnostic error"><strong>Не удалось сгенерировать модель</strong><span>${escapeXml(error instanceof Error ? error.message : error)}</span></div>`;
+    diagnostics.innerHTML = `<div class="diagnostic error"><strong>${escapeXml(localText('Не удалось сгенерировать модель', 'Could not generate the model'))}</strong><span>${escapeXml(error instanceof Error ? error.message : error)}</span></div>`;
   }
 });
 
@@ -614,14 +662,14 @@ runTestsButton.addEventListener('click', async () => {
   runTestsButton.disabled = true;
   exportTestsButton.disabled = true;
   executionSummary.hidden = true;
-  executionTrace.innerHTML = '<div class="empty-state">Выполнение тестов…</div>';
-  setExecutionMessage('IN-MEMORY адаптер выполняет тест-план…', 'running');
+  executionTrace.innerHTML = `<div class="empty-state">${escapeXml(localText('Выполнение тестов…', 'Running tests…'))}</div>`;
+  setExecutionMessage(localText('IN-MEMORY адаптер выполняет тест-план…', 'The IN-MEMORY adapter is executing the test plan…'), 'running');
   try {
     const result = await runTestPlan(executablePlan, new InMemoryFsmAdapter(executableMachine));
     renderExecutionResult(result);
   } catch (error) {
-    executionTrace.innerHTML = '<div class="empty-state">Трасса недоступна</div>';
-    setExecutionMessage(`Не удалось выполнить тесты: ${error instanceof Error ? error.message : String(error)}`, 'error');
+    executionTrace.innerHTML = `<div class="empty-state">${escapeXml(localText('Трасса недоступна', 'Trace is unavailable'))}</div>`;
+    setExecutionMessage(localText(`Не удалось выполнить тесты: ${error instanceof Error ? error.message : String(error)}`, `Could not run tests: ${error instanceof Error ? error.message : String(error)}`), 'error');
   } finally {
     runTestsButton.disabled = !executablePlan;
     exportTestsButton.disabled = !executablePlan;
@@ -631,7 +679,7 @@ exportTestsButton.addEventListener('click', () => {
   if (!executablePlan) return;
   const filename = `${executablePlan.id}.json`;
   downloadJson(filename, serializeTestPlan(executablePlan));
-  setExecutionMessage(`Тест-план экспортирован: ${filename}`, 'success');
+  setExecutionMessage(localText(`Тест-план экспортирован: ${filename}`, `Test plan exported: ${filename}`), 'success');
 });
 $<HTMLSelectElement>('#timed-example').addEventListener('change', (event) => {
   const model = timedExamples.get((event.currentTarget as HTMLSelectElement).value);
@@ -648,16 +696,28 @@ runTimedButton.addEventListener('click', () => {
   timedMessage.className = `execution-message ${result.verdict === 'pass' ? 'success' : 'error'}`;
   timedMessage.textContent = result.verdict === 'pass'
     ? `Virtual-time campaign: ${result.counts.pass}/${result.cases.length} boundary tests passed.`
-    : `Timed campaign завершён с verdict ${result.verdict.toUpperCase()}.`;
+    : localText(`Timed campaign завершён с verdict ${result.verdict.toUpperCase()}.`, `Timed campaign completed with verdict ${result.verdict.toUpperCase()}.`);
 });
 exportTimedButton.addEventListener('click', () => {
   const filename = `${currentTimedModel.id}.timed-tests.json`;
   downloadJson(filename, serializeTimedTestCases(currentTimedModel, currentTimedCases));
   timedMessage.className = 'execution-message success';
-  timedMessage.textContent = `Timed boundary tests экспортированы: ${filename}`;
+  timedMessage.textContent = localText(`Timed boundary tests экспортированы: ${filename}`, `Timed boundary tests exported: ${filename}`);
 });
 $<HTMLElement>('.onboarding').addEventListener('click', async (event) => {
   const target = event.target instanceof Element ? event.target : undefined;
+  const selectButton = target?.closest<HTMLButtonElement>('[data-template-select]');
+  if (selectButton?.dataset.templateSelect) {
+    document.querySelectorAll<HTMLButtonElement>('[data-template-select]').forEach((button) => {
+      const active = button === selectButton;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    document.querySelectorAll<HTMLElement>('[data-template-card]').forEach((card) => {
+      card.hidden = card.dataset.templateCard !== selectButton.dataset.templateSelect;
+    });
+    return;
+  }
   const openButton = target?.closest<HTMLButtonElement>('.open-example');
   if (openButton?.dataset.template) {
     const action = resolveTemplateAction(openButton.dataset.template);
@@ -680,11 +740,11 @@ $<HTMLElement>('.onboarding').addEventListener('click', async (event) => {
   if (copyButton?.dataset.command) {
     try {
       await navigator.clipboard.writeText(copyButton.dataset.command);
-      copyButton.textContent = 'Copied';
+      copyButton.textContent = appLocale === 'ru' ? 'Скопировано' : 'Copied';
     } catch {
       copyButton.textContent = 'Ctrl+C';
     }
-    window.setTimeout(() => { copyButton.textContent = 'Copy'; }, 1_500);
+    window.setTimeout(() => { copyButton.textContent = appLocale === 'ru' ? 'Копировать' : 'Copy'; }, 1_500);
   }
 });
 
@@ -695,9 +755,39 @@ const tourDetail = $<HTMLElement>('#tour-detail');
 const tourProgress = $<HTMLElement>('#tour-progress');
 const nextTourButton = $<HTMLButtonElement>('#next-tour');
 
+function setAppLocale(locale: AppLocale): void {
+  appLocale = locale;
+  document.documentElement.dataset.locale = locale;
+  document.documentElement.lang = locale;
+  writeLocale(localStorage, locale);
+  document.querySelectorAll<HTMLButtonElement>('[data-locale]').forEach((button) => {
+    button.classList.toggle('active', button.dataset.locale === locale);
+    button.setAttribute('aria-pressed', String(button.dataset.locale === locale));
+  });
+  $<HTMLSelectElement>('#timed-example').setAttribute('aria-label', localText('Пример временного автомата', 'Timed automaton example'));
+  timedGraph.setAttribute('aria-label', localText('Граф временного автомата', 'Timed automaton graph'));
+  source.setAttribute('aria-label', localText('Описание конечного автомата', 'Finite-state machine specification'));
+  graph.setAttribute('aria-label', localText('Граф конечного автомата', 'Finite-state machine graph'));
+  $<HTMLOListElement>('.journey').setAttribute('aria-label', localText('Путь пользователя', 'User journey'));
+  $<HTMLDivElement>('.adapter-catalog').setAttribute('aria-label', localText('Доступные SUT-адаптеры', 'Available SUT adapters'));
+  document.querySelectorAll<HTMLElement>('.template-links').forEach((links) => {
+    const templateTitle = links.closest<HTMLElement>('[data-template-card]')?.querySelector('h3')?.textContent ?? '';
+    links.setAttribute('aria-label', localText(`Документация для ${templateTitle}`, `Documentation for ${templateTitle}`));
+  });
+  loadTimedModel(currentTimedModel);
+  build();
+  renderTourStep();
+}
+
 function renderTourStep(): void {
   const step = onboardingJourney[tourStep];
-  tourTitle.textContent = `${step.title}: ${step.detail}`;
+  tourTitle.textContent = `${step.title}: ${appLocale === 'ru' ? step.detail : journeyEnglish[tourStep]}`;
+  const tourDetailsEn = [
+    'Start with one of six validated models — no manual JSON is required.',
+    'Automata Studio builds transition-cover tests and expected outputs automatically.',
+    'Run in the browser or connect CLI, HTTP and Modbus systems through the Node runner.',
+    'Review the trace and verdict, then export JSON, JUnit XML or standalone HTML evidence.',
+  ];
   tourDetail.textContent = tourStep === 0
     ? 'Начните с одной из шести проверенных моделей ниже — писать JSON вручную не нужно.'
     : tourStep === 1
@@ -705,8 +795,11 @@ function renderTourStep(): void {
       : tourStep === 2
         ? 'Запустите модель в браузере или подключите CLI, HTTP и Modbus через Node runner.'
         : 'Изучите трассу и verdict; для CI экспортируйте JSON, JUnit XML или HTML evidence.';
+  if (appLocale === 'en') tourDetail.textContent = tourDetailsEn[tourStep];
   tourProgress.textContent = `${tourStep + 1} / ${onboardingJourney.length}`;
-  nextTourButton.textContent = tourStep === onboardingJourney.length - 1 ? 'Start / Начать' : 'Next / Далее';
+  nextTourButton.textContent = tourStep === onboardingJourney.length - 1
+    ? (appLocale === 'ru' ? 'Начать' : 'Start')
+    : (appLocale === 'ru' ? 'Далее' : 'Next');
 }
 
 function setTourVisible(visible: boolean): void {
@@ -735,12 +828,18 @@ $<HTMLButtonElement>('#reopen-tour').addEventListener('click', () => {
   reopenOnboarding(window.localStorage);
   setTourVisible(true);
 });
+document.querySelectorAll<HTMLButtonElement>('[data-locale]').forEach((button) => {
+  button.addEventListener('click', () => setAppLocale(button.dataset.locale as AppLocale));
+});
+document.querySelectorAll<HTMLButtonElement>('[data-scroll-target]').forEach((button) => {
+  button.addEventListener('click', () => document.getElementById(button.dataset.scrollTarget!)
+    ?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+});
 source.addEventListener('keydown', (event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') build(); });
 source.addEventListener('input', () => {
   canonicalModel = undefined;
   $<HTMLButtonElement>('#export-model').disabled = true;
   resetExecution();
 });
-loadTimedModel(currentTimedModel);
-build();
+setAppLocale(appLocale);
 setTourVisible(!isOnboardingDismissed(window.localStorage));
