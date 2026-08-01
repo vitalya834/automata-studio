@@ -1,13 +1,22 @@
 {
   "name": "automata-studio",
+  "productName": "Automata Studio",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.3.0",
+  "description": "Model-based testing workbench for finite-state and timed automata",
+  "author": "Vitaly <vitalya834@users.noreply.github.com>",
+  "main": "desktop/main.mjs",
   "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "build:pages": "tsc && vite build --base /automata-studio/",
+    "build:desktop:web": "tsc && vite build --base ./",
+    "desktop:dev": "npm run build:desktop:web && electron desktop/main.mjs",
+    "desktop:smoke": "npm run build:desktop:web && electron desktop/main.mjs --smoke-test",
+    "desktop:pack": "powershell -ExecutionPolicy Bypass -File scripts/build-desktop.ps1 -Unpacked",
+    "desktop:dist": "powershell -ExecutionPolicy Bypass -File scripts/build-desktop.ps1",
     "cli:build": "vite build --ssr src/runner-cli.ts --outDir dist-cli",
     "precli": "npm run cli:build --silent",
     "cli": "node dist-cli/runner-cli.js",
@@ -16,15 +25,65 @@
     "demo:modbus": "npm run cli:build --silent && vite build --ssr src/modbus-demo.ts --outDir dist-cli --emptyOutDir false --logLevel warn && node dist-cli/modbus-demo.js",
     "demo:http": "npm run cli:build --silent && vite build --ssr src/http-demo.ts --outDir dist-cli --emptyOutDir false --logLevel warn && node dist-cli/http-demo.js",
     "demo:github": "npm run cli -- run examples/test-plans/github-api-product.json --adapter http --config examples/adapters/http-github-api.json",
-    "test": "vitest run",
+    "test": "vitest run && node --test desktop/security-check.mjs",
     "cpp:build": "powershell -ExecutionPolicy Bypass -File scripts/build-cpp.ps1",
     "cpp:test": "powershell -ExecutionPolicy Bypass -File scripts/build-cpp.ps1 -Test"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",
     "ajv": "^8.20.0",
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vitest": "^3.1.4"
+  },
+  "build": {
+    "appId": "io.github.vitalya834.automata-studio",
+    "productName": "Automata Studio",
+    "asar": true,
+    "compression": "maximum",
+    "directories": {
+      "output": "artifacts",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-cli/**/*",
+      "desktop/**/*",
+      "examples/**/*",
+      "schema/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "build/icon.svg",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Automata Studio",
+      "artifactName": "Automata-Studio-Setup-${version}-${arch}.${ext}"
+    },
+    "portable": {
+      "artifactName": "Automata-Studio-Portable-${version}-${arch}.${ext}"
+    }
   }
 }
