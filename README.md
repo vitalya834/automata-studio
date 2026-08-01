@@ -12,6 +12,18 @@ core. Modbus is one future adapter, not the product boundary: the same abstract
 test plan can target a simulator, CLI process, HTTP service, CAN device or other
 SUT through an adapter.
 
+## v0.5 capabilities
+
+- visible Timed Testing Workbench with TFSM graphs and five bundled profiles;
+- virtual-time simulator for timed guards, state timeouts, output delays and
+  combined timeout/delay models;
+- boundary-case synthesis at inclusive/exclusive guard endpoints;
+- timed oracle verdicts: PASS, FAIL, EARLY, LATE, TIMEOUT and INVALID;
+- constant, interval and residence-dependent linear-family output delays;
+- JSON export of timed boundary campaigns for future real SUT adapters;
+- explicit Alur–Dill visualization with execution blocked until a correct
+  zone/region engine is available.
+
 ## v0.4 capabilities
 
 - canonical Model IR 1.0 for Mealy, Moore, EFSM and five TFSM timing profiles;
@@ -86,6 +98,7 @@ After `npm run cpp:build`:
 - [Test Plan IR JSON Schema](schema/automata-test-plan-v1.schema.json)
 - [Model IR semantics](docs/model-ir/SEMANTICS.md)
 - [Model IR migrations](docs/model-ir/MIGRATIONS.md)
+- [Timed testing semantics](docs/TIMED-TESTING.md)
 - [Next isolated task for Claude](docs/CLAUDE-NEXT-TASK.md)
 
 Obsidian project notes:

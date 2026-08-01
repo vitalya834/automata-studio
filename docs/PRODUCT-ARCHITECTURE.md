@@ -58,6 +58,7 @@ model source/import
 - versioned Test Plan IR and JSON Schema;
 - canonical Model IR 1.0 for Mealy, Moore, EFSM and TFSM plus runtime validation;
 - canonical Mealy Model IR import/export and compatibility-preserving DSL bridge;
+- virtual-time TFSM simulator, boundary synthesis and timed oracle;
 - TypeScript and C++ execution cores with deterministic in-memory adapters;
 - manual execution, detailed traces and JSON export in the browser workbench;
 - C++ CLI plus TypeScript UI.

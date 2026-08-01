@@ -18,9 +18,29 @@ import {
   type TestRunResult,
 } from './testing.ts';
 import { machineToModelIr, modelIrToMachine } from './model-ir-adapter.ts';
-import type { MealyModel } from './model-ir.ts';
+import { validateModel, type MealyModel, type TfsmModel, type TfsmTransition, type TimeInterval } from './model-ir.ts';
+import {
+  generateTimedBoundaryCases,
+  runVirtualTimedCampaign,
+  serializeTimedTestCases,
+  type TimedCampaignResult,
+  type TimedTestCase,
+} from './timed-testing.ts';
+import timedGuardExample from '../examples/models/valid/tfsm-timed-guards-door.json';
+import timeoutExample from '../examples/models/valid/tfsm-password-timeout.json';
+import outputDelayExample from '../examples/models/valid/tfsm-lamp-output-delay.json';
+import combinedTimedExample from '../examples/models/valid/tfsm-timeout-and-linear-delay.json';
+import alurDillExample from '../examples/models/valid/tfsm-alur-dill-two-clocks.json';
 
 type TestCase = { inputs: string[]; outputs?: string[]; target?: string };
+
+const timedExamples = new Map<string, TfsmModel>([
+  ['guards', timedGuardExample as TfsmModel],
+  ['timeouts', timeoutExample as TfsmModel],
+  ['delays', outputDelayExample as TfsmModel],
+  ['combined', combinedTimedExample as TfsmModel],
+  ['alur-dill', alurDillExample as TfsmModel],
+]);
 
 const example = `# Turnstile: input / output
 machine Turnstile
@@ -36,7 +56,7 @@ Unlocked --coin / return--> Unlocked`;
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <header class="topbar">
     <div class="brand"><span class="brand-mark">A</span><div><span class="eyebrow">AUTOMATA ENGINEERING WORKBENCH</span><h1>Automata Studio</h1></div></div>
-    <div class="header-actions"><span class="version">CORE / UI 0.4</span><button id="build" class="primary">Анализировать <kbd>Ctrl↵</kbd></button></div>
+    <div class="header-actions"><span class="version">CORE / UI 0.5</span><button id="build" class="primary">Анализировать <kbd>Ctrl↵</kbd></button></div>
   </header>
 
   <main>
@@ -50,6 +70,39 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <label class="switch-row"><input id="deterministic" type="checkbox" checked><span class="switch"></span><span>Детерминированный</span></label>
         <label class="switch-row"><input id="complete" type="checkbox" checked><span class="switch"></span><span>Полный</span></label>
         <button id="generate" class="generate-button">Сгенерировать <span>→</span></button>
+      </div>
+    </section>
+
+    <section class="panel timed-panel" aria-labelledby="timed-title">
+      <div class="section-heading timed-heading">
+        <div><span class="step">T</span><h2 id="timed-title">Timed Testing Workbench</h2><span class="adapter-status"><i></i> VIRTUAL TIME</span></div>
+        <div class="timed-actions">
+          <select id="timed-example" aria-label="Пример временного автомата">
+            <option value="guards">Timed guards · Door</option>
+            <option value="timeouts">Timeouts · Password</option>
+            <option value="delays">Output delays · Lamp</option>
+            <option value="combined">Timeout + linear delay · Session</option>
+            <option value="alur-dill">Alur–Dill · Two clocks</option>
+          </select>
+          <button id="export-timed" class="quiet action-button">Экспорт timed tests</button>
+          <button id="run-timed" class="primary action-button">Запустить boundary tests</button>
+        </div>
+      </div>
+      <div class="timed-layout">
+        <div class="timed-model">
+          <div id="timed-metrics" class="timed-metrics"></div>
+          <svg id="timed-graph" viewBox="0 0 760 360" role="img" aria-label="Граф временного автомата"></svg>
+        </div>
+        <div class="timed-results">
+          <div id="timed-message" class="execution-message">Выберите TFSM и запустите виртуальные граничные тесты.</div>
+          <div id="timed-summary" class="execution-summary" hidden>
+            <div class="result-card pass"><span>PASS</span><strong id="timed-pass">0</strong></div>
+            <div class="result-card fail"><span>FAIL</span><strong id="timed-fail">0</strong></div>
+            <div class="result-card timeout"><span>EARLY/LATE</span><strong id="timed-violations">0</strong></div>
+            <div class="result-card duration"><span>CASES</span><strong id="timed-total">0</strong></div>
+          </div>
+          <div id="timed-cases" class="timed-cases"></div>
+        </div>
       </div>
     </section>
 
@@ -111,13 +164,106 @@ const executionSummary = $<HTMLDivElement>('#execution-summary');
 const executionTrace = $<HTMLDivElement>('#execution-trace');
 const runTestsButton = $<HTMLButtonElement>('#run-tests');
 const exportTestsButton = $<HTMLButtonElement>('#export-tests');
+const timedGraph = $<SVGSVGElement>('#timed-graph');
+const timedMetrics = $<HTMLDivElement>('#timed-metrics');
+const timedMessage = $<HTMLDivElement>('#timed-message');
+const timedCasesNode = $<HTMLDivElement>('#timed-cases');
+const runTimedButton = $<HTMLButtonElement>('#run-timed');
+const exportTimedButton = $<HTMLButtonElement>('#export-timed');
 let executableMachine: Machine | undefined;
 let executablePlan: TestPlan | undefined;
 let canonicalModel: MealyModel | undefined;
+let currentTimedModel: TfsmModel = timedExamples.get('guards')!;
+let currentTimedCases: TimedTestCase[] = [];
 source.value = example;
 
 function escapeXml(value: unknown): string {
   return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
+}
+
+function formatInterval(interval: TimeInterval): string {
+  const left = interval.lower.inclusive ? '[' : '(';
+  const right = 'value' in interval.upper ? (interval.upper.inclusive ? ']' : ')') : ')';
+  const upper = 'value' in interval.upper ? interval.upper.value : '∞';
+  return `${left}${interval.lower.value}, ${upper}${right}`;
+}
+
+function formatTimedTransition(transition: TfsmModel['transitions'][number]): string {
+  if (!('output' in transition)) {
+    const guard = transition.guard?.map((item) => `${item.clock}${item.op}${item.value}`).join(' ∧ ');
+    return `${transition.input}${guard ? ` · ${guard}` : ''}${transition.resets.length ? ` · reset ${transition.resets.join(',')}` : ''}`;
+  }
+  const regular = transition as TfsmTransition;
+  const guard = regular.timedGuard ? ` · t∈${formatInterval(regular.timedGuard)}` : '';
+  const delay = regular.outputDelay?.kind === 'constant' ? ` · Δ=${regular.outputDelay.value}`
+    : regular.outputDelay?.kind === 'interval' ? ` · Δ∈${formatInterval(regular.outputDelay.interval)}`
+      : regular.outputDelay?.kind === 'linearFamily' ? ` · Δ=${regular.outputDelay.base}+${regular.outputDelay.slope}t` : '';
+  return `${regular.input} / ${regular.output}${guard}${delay}`;
+}
+
+function renderTimedGraph(model: TfsmModel): void {
+  const centerX = 380;
+  const centerY = 180;
+  const radius = Math.min(132, 62 + model.states.length * 18);
+  const points = new Map(model.states.map((state, index) => {
+    const angle = -Math.PI / 2 + (index * Math.PI * 2) / model.states.length;
+    return [state.id, { x: centerX + Math.cos(angle) * radius, y: centerY + Math.sin(angle) * radius }];
+  }));
+  const edges = model.transitions.map((transition) => {
+    const from = points.get(transition.from);
+    const to = points.get(transition.to);
+    if (!from || !to) return '';
+    const label = escapeXml(formatTimedTransition(transition));
+    if (transition.from === transition.to) {
+      return `<path class="edge timed-edge" d="M ${from.x - 18} ${from.y - 35} C ${from.x - 60} ${from.y - 90}, ${from.x + 60} ${from.y - 90}, ${from.x + 18} ${from.y - 35}" marker-end="url(#timed-arrow)"/><text class="edge-label timed-label" x="${from.x}" y="${from.y - 76}">${label}</text>`;
+    }
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const length = Math.hypot(dx, dy) || 1;
+    const sx = from.x + (dx / length) * 39;
+    const sy = from.y + (dy / length) * 39;
+    const ex = to.x - (dx / length) * 45;
+    const ey = to.y - (dy / length) * 45;
+    return `<line class="edge timed-edge" x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" marker-end="url(#timed-arrow)"/><text class="edge-label timed-label" x="${(sx + ex) / 2}" y="${(sy + ey) / 2 - 8}">${label}</text>`;
+  }).join('');
+  const nodes = model.states.map((state) => {
+    const point = points.get(state.id)!;
+    const timeout = 'timeout' in state && state.timeout ? `timeout ${state.timeout.after}→${state.timeout.to}` : '';
+    const invariant = 'invariant' in state && state.invariant?.length
+      ? state.invariant.map((item) => `${item.clock}${item.op}${item.value}`).join(' ∧ ') : '';
+    return `<g class="node timed-node${state.id === model.initial.stateId ? ' initial' : ''}"><circle cx="${point.x}" cy="${point.y}" r="36"/><text x="${point.x}" y="${point.y + 4}">${escapeXml(state.id)}</text>${timeout || invariant ? `<text class="state-timing" x="${point.x}" y="${point.y + 54}">${escapeXml(timeout || invariant)}</text>` : ''}</g>`;
+  }).join('');
+  timedGraph.innerHTML = `<defs><marker id="timed-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z"/></marker></defs>${edges}${nodes}`;
+}
+
+function renderTimedCases(cases: TimedTestCase[], result?: TimedCampaignResult): void {
+  const resultById = new Map(result?.cases.map((item) => [item.caseId, item]));
+  timedCasesNode.innerHTML = cases.length ? cases.map((testCase, index) => {
+    const caseResult = resultById.get(testCase.id);
+    const last = testCase.actions.at(-1);
+    const timing = last?.kind === 'input' ? `t=${last.at}` : last ? `wait→${last.until}` : '—';
+    const verdict = caseResult?.verdict ?? 'pending';
+    return `<div class="timed-case"><span class="test-index">${String(index + 1).padStart(2, '0')}</span><div><strong>${escapeXml(testCase.name)}</strong><small>${escapeXml(testCase.target)} · ${escapeXml(timing)} ${escapeXml(currentTimedModel.timeUnit)}</small></div><span class="verdict ${escapeXml(verdict)}">${escapeXml(verdict.toUpperCase())}</span></div>`;
+  }).join('') : '<div class="empty-state">Для этого профиля нужен специализированный zone/region engine</div>';
+}
+
+function loadTimedModel(model: TfsmModel): void {
+  currentTimedModel = model;
+  currentTimedCases = generateTimedBoundaryCases(model);
+  renderTimedGraph(model);
+  timedMetrics.innerHTML = [
+    ['PROFILE', model.timingProfile], ['UNIT', model.timeUnit], ['STATES', model.states.length],
+    ['EDGES', model.transitions.length], ['BOUNDARY TESTS', currentTimedCases.length],
+  ].map(([label, value]) => `<div><span>${label}</span><strong>${escapeXml(value)}</strong></div>`).join('');
+  renderTimedCases(currentTimedCases);
+  $<HTMLDivElement>('#timed-summary').hidden = true;
+  const alurDill = model.timingProfile === 'alurDill';
+  runTimedButton.disabled = alurDill;
+  exportTimedButton.disabled = alurDill;
+  timedMessage.className = `execution-message${alurDill ? ' error' : ' success'}`;
+  timedMessage.textContent = alurDill
+    ? 'Alur–Dill модель отображена, но для исполнения требуется zone/region engine. Аппроксимация запрещена.'
+    : `TFSM ${model.name}: подготовлено ${currentTimedCases.length} граничных тестов в ${model.timeUnit}.`;
 }
 
 function renderGraph(machine: Machine): void {
@@ -360,6 +506,13 @@ $<HTMLInputElement>('#model-file').addEventListener('change', async (event) => {
   if (!file) return;
   try {
     const document = JSON.parse(await file.text()) as unknown;
+    const canonical = validateModel(document);
+    if (canonical.ok && canonical.model.modelKind === 'tfsm') {
+      loadTimedModel(canonical.model);
+      $<HTMLSelectElement>('#timed-example').value = '';
+      diagnostics.innerHTML = '<div class="diagnostic success"><strong>TFSM импортирован</strong><span>Временная модель загружена в Timed Testing Workbench.</span></div>';
+      return;
+    }
     const imported = modelIrToMachine(document);
     if (!imported.ok) {
       canonicalModel = undefined;
@@ -426,10 +579,34 @@ exportTestsButton.addEventListener('click', () => {
   downloadJson(filename, serializeTestPlan(executablePlan));
   setExecutionMessage(`Тест-план экспортирован: ${filename}`, 'success');
 });
+$<HTMLSelectElement>('#timed-example').addEventListener('change', (event) => {
+  const model = timedExamples.get((event.currentTarget as HTMLSelectElement).value);
+  if (model) loadTimedModel(model);
+});
+runTimedButton.addEventListener('click', () => {
+  const result = runVirtualTimedCampaign(currentTimedModel, currentTimedCases);
+  $('#timed-pass').textContent = String(result.counts.pass);
+  $('#timed-fail').textContent = String(result.counts.fail + result.counts.invalid + result.counts.timeout);
+  $('#timed-violations').textContent = String(result.counts.early + result.counts.late);
+  $('#timed-total').textContent = String(result.cases.length);
+  $<HTMLDivElement>('#timed-summary').hidden = false;
+  renderTimedCases(currentTimedCases, result);
+  timedMessage.className = `execution-message ${result.verdict === 'pass' ? 'success' : 'error'}`;
+  timedMessage.textContent = result.verdict === 'pass'
+    ? `Virtual-time campaign: ${result.counts.pass}/${result.cases.length} boundary tests passed.`
+    : `Timed campaign завершён с verdict ${result.verdict.toUpperCase()}.`;
+});
+exportTimedButton.addEventListener('click', () => {
+  const filename = `${currentTimedModel.id}.timed-tests.json`;
+  downloadJson(filename, serializeTimedTestCases(currentTimedModel, currentTimedCases));
+  timedMessage.className = 'execution-message success';
+  timedMessage.textContent = `Timed boundary tests экспортированы: ${filename}`;
+});
 source.addEventListener('keydown', (event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') build(); });
 source.addEventListener('input', () => {
   canonicalModel = undefined;
   $<HTMLButtonElement>('#export-model').disabled = true;
   resetExecution();
 });
+loadTimedModel(currentTimedModel);
 build();
