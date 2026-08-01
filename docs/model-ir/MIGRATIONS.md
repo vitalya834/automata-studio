@@ -1,5 +1,7 @@
 # Model IR — Versioning and Migrations
 
+[English](MIGRATIONS.md) | [Русский](MIGRATIONS.ru.md)
+
 ## Versioning policy
 
 `schemaVersion` is `"MAJOR.MINOR"`:

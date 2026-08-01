@@ -1,5 +1,7 @@
 # Automata taxonomy for Automata Studio
 
+[English](AUTOMATA-TAXONOMY.md) | [Русский](AUTOMATA-TAXONOMY.ru.md)
+
 Automata Studio is a model-based testing platform. A graph is a view of a model;
 it is not the model's semantics. Every imported or generated model must declare a
 `modelKind` and a semantic profile before algorithms can be selected.
@@ -144,4 +146,3 @@ be applied to them merely because their control graph looks finite.
 - UML 2.5.1: https://www.omg.org/spec/UML/2.5.1/
 - PRISM probabilistic model types:
   https://www.prismmodelchecker.org/manual/ThePRISMLanguage/ModelType
-

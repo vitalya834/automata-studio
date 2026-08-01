@@ -1,5 +1,7 @@
 # Test execution architecture
 
+[English](TEST-EXECUTION.md) | [Русский](TEST-EXECUTION.ru.md)
+
 ## Purpose
 
 The execution layer runs the same generated test plan against a simulator,

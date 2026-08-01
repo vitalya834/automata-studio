@@ -1,5 +1,7 @@
 # Timed testing v0.5
 
+[English](TIMED-TESTING.md) | [Русский](TIMED-TESTING.ru.md)
+
 ## Scope
 
 The v0.5 workbench makes TFSM timing semantics visible and executable. It uses

@@ -1,5 +1,7 @@
 # Automata Studio
 
+[English](README.md) | [Русский](README.ru.md)
+
 Automata Studio is a hybrid C++/TypeScript model-based testing workbench. It
 generates finite-state models from reproducible constraints, imports the legacy
 `.fsm` format, validates machine properties, synthesizes transition-cover test
@@ -108,6 +110,7 @@ After `npm run cpp:build`:
 
 ## Architecture and research
 
+- [Documentation index (English / Русский)](docs/README.md)
 - [Product architecture](docs/PRODUCT-ARCHITECTURE.md)
 - [Automata taxonomy](docs/AUTOMATA-TAXONOMY.md)
 - [Test execution architecture](docs/TEST-EXECUTION.md)

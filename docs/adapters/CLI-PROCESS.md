@@ -1,5 +1,7 @@
 # CLI Process SUT Adapter (v0.6)
 
+[English](CLI-PROCESS.md) | [Русский](CLI-PROCESS.ru.md)
+
 Adapter: [`src/adapters/cli-process.ts`](../../src/adapters/cli-process.ts) —
 implements the `SutAdapter` contract from `src/testing.ts` for a local child
 process speaking JSON Lines over stdin/stdout. Fixture SUTs:

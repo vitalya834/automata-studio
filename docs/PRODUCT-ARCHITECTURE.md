@@ -1,5 +1,7 @@
 # Automata Studio — product architecture
 
+[English](PRODUCT-ARCHITECTURE.md) | [Русский](PRODUCT-ARCHITECTURE.ru.md)
+
 ## Product statement
 
 Automata Studio generates formal machine models and test suites, visualizes both

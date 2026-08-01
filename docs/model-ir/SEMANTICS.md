@@ -1,5 +1,7 @@
 # Model IR v1 — Semantics
 
+[English](SEMANTICS.md) | [Русский](SEMANTICS.ru.md)
+
 Canonical interchange model for Automata Studio. Schema:
 [`schema/automata-model-v1.schema.json`](../../schema/automata-model-v1.schema.json),
 runtime validator: [`src/model-ir.ts`](../../src/model-ir.ts).
