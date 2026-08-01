@@ -1,4 +1,4 @@
-# CLI Process SUT Adapter (v0.5)
+# CLI Process SUT Adapter (v0.6)
 
 Adapter: [`src/adapters/cli-process.ts`](../../src/adapters/cli-process.ts) —
 implements the `SutAdapter` contract from `src/testing.ts` for a local child

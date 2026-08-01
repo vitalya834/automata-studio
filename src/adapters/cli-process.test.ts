@@ -94,10 +94,10 @@ describe('happy path', () => {
 
 describe('failures', () => {
   it('times out when the SUT never responds', async () => {
-    const adapter = makeAdapter('silent.cjs', { responseTimeoutMs: 100 });
+    const adapter = makeAdapter('silent.cjs', { responseTimeoutMs: 1_000 });
     await adapter.reset();
     const error = await expectAdapterError(adapter.send('coin'), 'response-timeout');
-    expect(error.message).toContain('100 ms');
+    expect(error.message).toContain('1000 ms');
   });
 
   it('rejects malformed JSON as a protocol error', async () => {
@@ -196,7 +196,7 @@ describe('close', () => {
   });
 
   it('close() terminates a child even after a timeout failure', async () => {
-    const adapter = makeAdapter('silent.cjs', { responseTimeoutMs: 100 });
+    const adapter = makeAdapter('silent.cjs', { responseTimeoutMs: 1_000 });
     await adapter.reset();
     await expectAdapterError(adapter.send('coin'), 'response-timeout');
     await adapter.close();

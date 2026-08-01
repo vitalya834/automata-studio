@@ -56,7 +56,7 @@ Unlocked --coin / return--> Unlocked`;
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <header class="topbar">
     <div class="brand"><span class="brand-mark">A</span><div><span class="eyebrow">AUTOMATA ENGINEERING WORKBENCH</span><h1>Automata Studio</h1></div></div>
-    <div class="header-actions"><span class="version">CORE / UI 0.5</span><button id="build" class="primary">Анализировать <kbd>Ctrl↵</kbd></button></div>
+    <div class="header-actions"><span class="version">CORE / UI 0.6</span><button id="build" class="primary">Анализировать <kbd>Ctrl↵</kbd></button></div>
   </header>
 
   <main>

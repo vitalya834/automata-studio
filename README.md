@@ -12,6 +12,22 @@ core. Modbus is one future adapter, not the product boundary: the same abstract
 test plan can target a simulator, CLI process, HTTP service, CAN device or other
 SUT through an adapter.
 
+## v0.6 capabilities
+
+- Node.js CLI-process adapter for testing real external programs through a
+  strict JSON Lines stdin/stdout protocol;
+- process lifecycle, response deadlines, cancellation and deterministic reset;
+- direct executable spawning without a shell and an explicit environment
+  allowlist;
+- bounded protocol lines and stderr diagnostics, correlation IDs and rejection
+  of malformed, duplicate or mismatched replies;
+- end-to-end execution of generated Test Plan IR against a fixture process;
+- 100 automated TypeScript tests plus the C++ runner/core checks.
+
+The browser workbench cannot spawn local executables because of browser security
+boundaries. The CLI adapter is a Node.js integration API and uses the same
+`runTestPlan` engine as the visible in-memory execution panel.
+
 ## v0.5 capabilities
 
 - visible Timed Testing Workbench with TFSM graphs and five bundled profiles;

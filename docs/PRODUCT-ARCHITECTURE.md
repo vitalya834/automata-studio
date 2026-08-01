@@ -60,6 +60,7 @@ model source/import
 - canonical Mealy Model IR import/export and compatibility-preserving DSL bridge;
 - virtual-time TFSM simulator, boundary synthesis and timed oracle;
 - TypeScript and C++ execution cores with deterministic in-memory adapters;
+- hardened Node.js CLI-process adapter for real external SUT programs;
 - manual execution, detailed traces and JSON export in the browser workbench;
 - C++ CLI plus TypeScript UI.
 
@@ -86,9 +87,9 @@ model source/import
 - early/late/missing-output oracle and tolerance policy;
 - timed mutations and boundary timestamps.
 
-### Integration
+### Integration (in progress)
 
-- SUT adapter SDK and real runner;
+- SUT adapter SDK and real runner (CLI process complete);
 - device/protocol adapters;
 - parallel/cascade composition and communicating machines;
 - CI reports and reproducible test campaigns.

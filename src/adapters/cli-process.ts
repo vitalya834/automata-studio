@@ -1,5 +1,5 @@
 /**
- * CLI process SUT adapter (v0.5).
+ * CLI process SUT adapter (v0.6).
  *
  * Drives a local child process speaking one UTF-8 JSON object per line over
  * stdin/stdout (JSON Lines). Implements the SutAdapter contract from
