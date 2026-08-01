@@ -22,6 +22,8 @@ CLI-процессе, HTTP-сервисе, Modbus/CAN-устройстве ил�
   окружения;
 - ограничение размера строк и stderr, request ID и отклонение ошибочных ответов;
 - выполнение Test Plan IR на настоящем дочернем процессе;
+- запускаемый terminal runner с валидацией, text/JSON, exit codes для CI и
+  сохранением полного отчёта;
 - 100 автоматических TypeScript-тестов и проверки C++-ядра/runner.
 
 Браузер не может запускать локальные программы из-за своей модели безопасности.
@@ -83,6 +85,16 @@ npm run cpp:build
 .\build-cpp\fsm-cli.exe generate --name Demo --states 8 --inputs 3 --outputs 2 --seed 2025
 ```
 
+## Runner для внешнего SUT
+
+```powershell
+npm run cli -- validate examples/test-plans/turnstile-transition-cover.json
+npm run demo:cli
+```
+
+Настройка executable, allowlist окружения, JSON и файлы отчётов описаны в
+[документации runner CLI](docs/RUNNER-CLI.ru.md).
+
 ## Документация
 
 - [Двуязычный индекс документации](docs/README.ru.md)
@@ -90,6 +102,7 @@ npm run cpp:build
 - [Таксономия автоматов](docs/AUTOMATA-TAXONOMY.ru.md)
 - [Архитектура выполнения тестов](docs/TEST-EXECUTION.ru.md)
 - [Временное тестирование](docs/TIMED-TESTING.ru.md)
+- [Runner CLI для внешних SUT](docs/RUNNER-CLI.ru.md)
 - [CLI Process SUT Adapter](docs/adapters/CLI-PROCESS.ru.md)
 
 Восстановленное Java-приложение 2010 года хранится вне репозитория в

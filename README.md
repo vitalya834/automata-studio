@@ -24,6 +24,8 @@ SUT through an adapter.
 - bounded protocol lines and stderr diagnostics, correlation IDs and rejection
   of malformed, duplicate or mismatched replies;
 - end-to-end execution of generated Test Plan IR against a fixture process;
+- executable terminal runner with validation, text/JSON output, CI exit codes
+  and optional JSON evidence reports;
 - 100 automated TypeScript tests plus the C++ runner/core checks.
 
 The browser workbench cannot spawn local executables because of browser security
@@ -108,6 +110,16 @@ After `npm run cpp:build`:
 
 `fsm-cli <file>` remains a backward-compatible alias for `parse`.
 
+## External SUT runner
+
+```powershell
+npm run cli -- validate examples/test-plans/turnstile-transition-cover.json
+npm run demo:cli
+```
+
+See [runner CLI documentation](docs/RUNNER-CLI.md) for external executables,
+environment allowlisting, JSON output and report files.
+
 ## Architecture and research
 
 - [Documentation index (English / Русский)](docs/README.md)
@@ -118,6 +130,7 @@ After `npm run cpp:build`:
 - [Model IR semantics](docs/model-ir/SEMANTICS.md)
 - [Model IR migrations](docs/model-ir/MIGRATIONS.md)
 - [Timed testing semantics](docs/TIMED-TESTING.md)
+- [External SUT runner CLI](docs/RUNNER-CLI.md)
 - [Next isolated task for Claude](docs/CLAUDE-NEXT-TASK.md)
 
 Obsidian project notes:
