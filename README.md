@@ -16,6 +16,25 @@ core. Modbus is one future adapter, not the product boundary: the same abstract
 test plan can target a simulator, CLI process, HTTP service, CAN device or other
 SUT through an adapter.
 
+## v1.1 onboarding and template gallery
+
+- the browser workbench opens with a "Start testing / Начать тестирование"
+  section for people who do not know FSM terminology yet;
+- six ready-made scenario cards: game state machine, REST API, Modbus TCP
+  device, ML inference service, timed controller and CLI application;
+- every card explains what is tested, which states/inputs/outputs the model
+  uses, which adapter is required and which real command to run;
+- "Open example" loads the game model into the DSL editor and the timed
+  controller into the Timed Testing Workbench — right in the browser;
+- runner-only scenarios (HTTP, Modbus, ML, CLI) show real `npm run` commands
+  and links to existing examples and docs instead of imitating execution the
+  browser cannot perform;
+- a five-step journey strip: choose template → inspect graph → generate
+  tests → run adapter → inspect report;
+- the template catalog and selection logic live in a typed module
+  (`src/onboarding.ts`) with unit tests that pin every advertised command,
+  file and link to something that actually exists in the repository.
+
 ## v1.0 product pipeline
 
 - one CLI now supports `generate`, `validate` and `run` workflows;
