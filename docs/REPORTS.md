@@ -9,7 +9,7 @@ does not read files, contact a network, mutate the result or insert current time
 ## CLI
 
 ```powershell
-npm run cli -- run plan.json --adapter cli --executable sut.exe `
+npm run cli -- run plan.json -- --adapter cli --executable sut.exe `
   --report result.json `
   --junit junit.xml `
   --html report.html

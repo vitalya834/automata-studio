@@ -73,7 +73,7 @@ const adapter = new ModbusTcpAdapter({
 ```powershell
 npm run demo:modbus
 
-npm run cli -- run examples/test-plans/modbus-lamp.json `
+npm run cli -- run examples/test-plans/modbus-lamp.json -- `
   --adapter modbus `
   --config examples/adapters/modbus-lamp.json
 ```

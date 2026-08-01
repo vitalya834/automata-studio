@@ -16,6 +16,7 @@
 | Генерация последовательностей | [English](DATASET-GENERATION.md) | [Русский](DATASET-GENERATION.ru.md) |
 | Запускаемый SUT runner | [English](RUNNER-CLI.md) | [Русский](RUNNER-CLI.ru.md) |
 | Evidence reports | [English](REPORTS.md) | [Русский](REPORTS.ru.md) |
+| Проверка реального GitHub API | [English](REAL-WORLD-DEMO.md) | [Русский](REAL-WORLD-DEMO.ru.md) |
 | Семантика Model IR | [English](model-ir/SEMANTICS.md) | [Русский](model-ir/SEMANTICS.ru.md) |
 | Версии и миграции Model IR | [English](model-ir/MIGRATIONS.md) | [Русский](model-ir/MIGRATIONS.ru.md) |
 

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0",
+  "id": "automata-studio-github-contract",
+  "name": "Automata Studio public GitHub product contract",
+  "modelId": "GitHubRepositoryLifecycle",
+  "metadata": {
+    "adapter": "http",
+    "domain": "real-world-dogfood",
+    "sut": "GitHub REST API"
+  },
+  "cases": [
+    {
+      "id": "repository-is-public",
+      "name": "Repository remains publicly accessible",
+      "metadata": {},
+      "steps": [
+        { "input": "read_visibility", "allowedExpectedOutputs": ["public"], "timeoutMs": 5000 }
+      ]
+    },
+    {
+      "id": "default-branch-is-main",
+      "name": "Public entry point remains main",
+      "metadata": {},
+      "steps": [
+        { "input": "read_default_branch", "allowedExpectedOutputs": ["main"], "timeoutMs": 5000 }
+      ]
+    },
+    {
+      "id": "license-is-mit",
+      "name": "Repository exposes the MIT license",
+      "metadata": {},
+      "steps": [
+        { "input": "read_license", "allowedExpectedOutputs": ["MIT"], "timeoutMs": 5000 }
+      ]
+    },
+    {
+      "id": "release-is-v1",
+      "name": "Latest public product release is v1.0.0",
+      "metadata": {},
+      "steps": [
+        { "input": "read_latest_release", "allowedExpectedOutputs": ["v1.0.0"], "timeoutMs": 5000 }
+      ]
+    }
+  ]
+}

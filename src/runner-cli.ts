@@ -14,6 +14,7 @@ import { parseRunnerCliArgs, RunnerCliUsageError } from './runner-cli-options';
 import { testRunToHtml, testRunToJUnit } from './reports';
 import { generateTransitionCover, parseMachine, type Machine } from './fsm';
 import { randomWalkToTestPlan } from './campaign';
+import { conformanceSuiteToTestPlan, generateConformanceSuite } from './conformance';
 
 const HELP = `Automata Studio test runner v1.0
 
@@ -25,11 +26,15 @@ Usage:
   automata run <plan.json> --adapter http --config <adapter.json> [options]
 
 Generator options:
-  --strategy transition-cover|random-walk   Generation algorithm
+  --strategy transition-cover|random-walk|w|wp|hsi
+                                  Generation algorithm
   --cases <count>               Random-walk case count (default: 25)
   --max-steps <count>           Maximum steps per random walk (default: 20)
   --timeout <ms>                Per-step deadline (default: 1000)
   --seed <value>                Reproducible random seed (default: 2026)
+  --max-implementation-states <count>
+                                  IUT state upper bound for W (default: model size)
+  --max-cases <count>           Conformance-suite safety limit (default: 10000)
   --output <file>               Destination Test Plan IR JSON
 
 CLI adapter options:
@@ -174,11 +179,23 @@ async function main(): Promise<number> {
           id, name: `${machine.name} transition cover`, modelId: machine.name, timeoutMs: command.timeoutMs,
           metadata: { sourceModel: command.modelPath },
         })
-      : randomWalkToTestPlan(machine, {
+      : command.strategy === 'random-walk'
+        ? randomWalkToTestPlan(machine, {
           id, name: `${machine.name} random-walk campaign`, modelId: machine.name,
           cases: command.cases, maxSteps: command.maxSteps, timeoutMs: command.timeoutMs, seed: command.seed,
           metadata: { sourceModel: command.modelPath },
-        });
+        })
+        : conformanceSuiteToTestPlan(generateConformanceSuite(machine, {
+            method: command.strategy,
+            maxImplementationStates: command.maxImplementationStates,
+            maxCases: command.maxCases,
+          }), {
+            id,
+            name: `${machine.name} ${command.strategy.toUpperCase()} conformance campaign`,
+            modelId: machine.name,
+            timeoutMs: command.timeoutMs,
+            metadata: { sourceModel: command.modelPath },
+          });
     await writeFile(resolve(command.outputPath), `${serializeTestPlan(plan)}\n`, 'utf8');
     process.stdout.write(`GENERATED  ${command.strategy}  cases=${plan.cases.length}  output=${resolve(command.outputPath)}\n`);
     return 0;

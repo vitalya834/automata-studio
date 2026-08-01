@@ -1,5 +1,5 @@
 export type OutputFormat = 'text' | 'json';
-export type GenerateStrategy = 'transition-cover' | 'random-walk';
+export type GenerateStrategy = 'transition-cover' | 'random-walk' | 'w' | 'wp' | 'hsi';
 
 export type RunnerCliCommand =
   | { kind: 'help' }
@@ -12,6 +12,8 @@ export type RunnerCliCommand =
       maxSteps: number;
       timeoutMs: number;
       seed: string;
+      maxImplementationStates?: number;
+      maxCases: number;
     }
   | { kind: 'validate'; planPath: string; format: OutputFormat }
   | {
@@ -91,6 +93,8 @@ export function parseRunnerCliArgs(argv: string[]): RunnerCliCommand {
     let maxSteps = 20;
     let timeoutMs = 1_000;
     let seed = '2026';
+    let maxImplementationStates: number | undefined;
+    let maxCases = 10_000;
     for (let index = modelPath === undefined ? 1 : 2; index < argv.length; index += 1) {
       const flag = argv[index];
       if (flag === '--help' || flag === '-h') return { kind: 'help' };
@@ -100,21 +104,23 @@ export function parseRunnerCliArgs(argv: string[]): RunnerCliCommand {
         case '--model': modelPath = value; break;
         case '--output': outputPath = value; break;
         case '--strategy':
-          if (value !== 'transition-cover' && value !== 'random-walk') {
-            throw new RunnerCliUsageError('--strategy must be transition-cover or random-walk.');
+          if (!['transition-cover', 'random-walk', 'w', 'wp', 'hsi'].includes(value)) {
+            throw new RunnerCliUsageError('--strategy must be transition-cover, random-walk, w, wp or hsi.');
           }
-          strategy = value;
+          strategy = value as GenerateStrategy;
           break;
         case '--cases': cases = positiveInteger(value, flag); break;
         case '--max-steps': maxSteps = positiveInteger(value, flag); break;
         case '--timeout': timeoutMs = positiveInteger(value, flag); break;
         case '--seed': seed = value; break;
+        case '--max-implementation-states': maxImplementationStates = positiveInteger(value, flag); break;
+        case '--max-cases': maxCases = positiveInteger(value, flag); break;
         default: throw new RunnerCliUsageError(`Unknown generate option ${JSON.stringify(flag)}.`);
       }
     }
     if (modelPath === undefined) throw new RunnerCliUsageError('A model path or --model is required.');
     if (outputPath === undefined) throw new RunnerCliUsageError('--output is required for generate.');
-    return { kind, modelPath, outputPath, strategy, cases, maxSteps, timeoutMs, seed };
+    return { kind, modelPath, outputPath, strategy, cases, maxSteps, timeoutMs, seed, maxImplementationStates, maxCases };
   }
 
   let planPath: string | undefined = argv[1]?.startsWith('--') === false ? argv[1] : undefined;

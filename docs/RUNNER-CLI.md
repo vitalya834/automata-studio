@@ -14,6 +14,10 @@ npm run cli -- validate examples/test-plans/turnstile-transition-cover.json
 npm run demo:cli
 ```
 
+When Automata options follow positional arguments, keep the second `--` shown
+in the examples. It prevents npm from interpreting flags such as `--adapter`
+and `--report` as npm configuration.
+
 The demo launches the bundled turnstile fixture as a real child process and
 executes two generated test cases. It does not mock the adapter boundary.
 
@@ -28,7 +32,7 @@ npm run demo:http
 ## Run your own program
 
 ```powershell
-npm run cli -- run path/to/plan.json `
+npm run cli -- run path/to/plan.json -- `
   --adapter cli `
   --executable path/to/sut.exe `
   --arg --json-lines `
@@ -58,7 +62,7 @@ This separation makes the command suitable for local debugging and CI scripts.
 Keep endpoint and register mappings outside the plan:
 
 ```powershell
-npm run cli -- run examples/test-plans/modbus-lamp.json `
+npm run cli -- run examples/test-plans/modbus-lamp.json -- `
   --adapter modbus `
   --config examples/adapters/modbus-lamp.json
 ```
@@ -68,7 +72,7 @@ npm run cli -- run examples/test-plans/modbus-lamp.json `
 HTTP inputs are mapped to requests in a separate adapter configuration:
 
 ```powershell
-npm run cli -- run examples/test-plans/http-ml-classifier.json `
+npm run cli -- run examples/test-plans/http-ml-classifier.json -- `
   --adapter http `
   --config examples/adapters/http-ml-classifier.json
 ```

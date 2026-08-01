@@ -10,7 +10,7 @@ HTTP-адаптер связывает независимые от проток�
 ## Запуск
 
 ```powershell
-npm run cli -- run examples/test-plans/http-ml-classifier.json `
+npm run cli -- run examples/test-plans/http-ml-classifier.json -- `
   --adapter http --config examples/adapters/http-ml-classifier.json `
   --html ml-report.html --junit ml-junit.xml
 ```

@@ -3,6 +3,18 @@
 [English](README.md) | [Русский](README.ru.md)
 
 [![CI](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml)
+[![Browser demo](https://img.shields.io/badge/live-browser_demo-50d1c5)](https://vitalya834.github.io/automata-studio/)
+[![Version](https://img.shields.io/badge/version-1.0.0-8b9cff)](https://github.com/vitalya834/automata-studio/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-f4c95d)](LICENSE)
+
+**Generate behavioral models, synthesize test campaigns, run them against real
+software or devices, and collect evidence.**
+
+[Open the browser workbench](https://vitalya834.github.io/automata-studio/) ·
+[Run the full HTTP demo](#five-minute-product-tour) ·
+[Read the Russian guide](README.ru.md)
+
+![Automata Studio v1.0 workbench](docs/screenshots/automata-studio-v1.png)
 
 Automata Studio is a hybrid C++/TypeScript model-based testing workbench. It
 generates finite-state models from reproducible constraints, imports the legacy
@@ -62,6 +74,31 @@ reopened from **Tour / Обзор**; only a dismissal preference is stored local
 - the template catalog and selection logic live in a typed module
   (`src/onboarding.ts`) with unit tests that pin every advertised command,
   file and link to something that actually exists in the repository.
+
+## Five-minute product tour
+
+Requirements: Node.js 24 and npm.
+
+```powershell
+git clone https://github.com/vitalya834/automata-studio.git
+cd automata-studio
+npm install
+npm run demo:http
+```
+
+The demo reads a game FSM, generates transition-cover tests, starts an ephemeral
+HTTP game server, executes every generated path, and emits JUnit/HTML evidence.
+Nothing is installed as a system service and no external device is contacted.
+
+| Goal | Command or guide |
+| --- | --- |
+| Explore models and timed automata | [Open browser demo](https://vitalya834.github.io/automata-studio/) |
+| Test a command-line program | `npm run demo:cli` |
+| Test Modbus TCP behavior safely | `npm run demo:modbus` |
+| Generate random behavioral tests | [Test generation guide](docs/TEST-GENERATION.md) |
+| Test a REST or ML inference API | [HTTP adapter guide](docs/adapters/HTTP.md) |
+| Test a real external product | `npm run demo:github` |
+| Generate sequence-model data | [Dataset guide](docs/DATASET-GENERATION.md) |
 
 ## v1.0 product pipeline
 
@@ -206,12 +243,13 @@ After `npm run cpp:build`:
 ## External SUT runner
 
 ```powershell
-npm run cli -- generate examples/game-session.fsm --strategy transition-cover --output game-plan.json
-npm run cli -- generate examples/game-session.fsm --strategy random-walk --cases 50 --max-steps 25 --seed 2026 --output game-fuzz.json
+npm run cli -- generate examples/game-session.fsm -- --strategy transition-cover --output game-plan.json
+npm run cli -- generate examples/game-session.fsm -- --strategy random-walk --cases 50 --max-steps 25 --seed 2026 --output game-fuzz.json
 npm run cli -- validate examples/test-plans/turnstile-transition-cover.json
 npm run demo:cli
 npm run demo:modbus
 npm run demo:http
+npm run demo:github
 ```
 
 See [runner CLI documentation](docs/RUNNER-CLI.md) for external executables,

@@ -3,6 +3,18 @@
 [English](README.md) | [Русский](README.ru.md)
 
 [![CI](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml)
+[![Browser demo](https://img.shields.io/badge/live-browser_demo-50d1c5)](https://vitalya834.github.io/automata-studio/)
+[![Version](https://img.shields.io/badge/version-1.0.0-8b9cff)](https://github.com/vitalya834/automata-studio/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-f4c95d)](LICENSE)
+
+**Создавайте модели поведения, генерируйте тестовые кампании, запускайте их на
+реальных программах или устройствах и сохраняйте доказательства проверки.**
+
+[Открыть браузерную лабораторию](https://vitalya834.github.io/automata-studio/) ·
+[Запустить полное HTTP-демо](#пятиминутное-знакомство) ·
+[English README](README.md)
+
+![Интерфейс Automata Studio v1.0](docs/screenshots/automata-studio-v1.png)
 
 Automata Studio — гибридная C++/TypeScript-платформа модельного тестирования.
 Она генерирует модели конечных автоматов по воспроизводимым ограничениям,
@@ -61,6 +73,31 @@ npm run dev
 - каталог шаблонов и логика выбора вынесены в типизированный модуль
   (`src/onboarding.ts`) с unit-тестами: каждая команда, файл и ссылка на
   карточках проверяются на существование в репозитории.
+
+## Пятиминутное знакомство
+
+Требуются Node.js 24 и npm.
+
+```powershell
+git clone https://github.com/vitalya834/automata-studio.git
+cd automata-studio
+npm install
+npm run demo:http
+```
+
+Демо читает FSM игры, генерирует transition-cover тесты, запускает временный
+HTTP-сервер, выполняет все пути и создаёт JUnit/HTML-отчёты. Оно не устанавливает
+системные службы и не подключается к внешним устройствам.
+
+| Цель | Команда или руководство |
+| --- | --- |
+| Посмотреть модели и временные автоматы | [Браузерное демо](https://vitalya834.github.io/automata-studio/) |
+| Проверить консольную программу | `npm run demo:cli` |
+| Безопасно проверить Modbus TCP | `npm run demo:modbus` |
+| Сгенерировать случайные тесты | [Генерация тестов](docs/TEST-GENERATION.ru.md) |
+| Проверить REST или ML inference API | [HTTP-адаптер](docs/adapters/HTTP.ru.md) |
+| Проверить реальный внешний продукт | `npm run demo:github` |
+| Создать данные последовательностей | [Генерация датасетов](docs/DATASET-GENERATION.ru.md) |
 
 ## Продуктовый конвейер v1.0
 
@@ -180,12 +217,13 @@ npm run cpp:build
 ## Runner для внешнего SUT
 
 ```powershell
-npm run cli -- generate examples/game-session.fsm --strategy transition-cover --output game-plan.json
-npm run cli -- generate examples/game-session.fsm --strategy random-walk --cases 50 --max-steps 25 --seed 2026 --output game-fuzz.json
+npm run cli -- generate examples/game-session.fsm -- --strategy transition-cover --output game-plan.json
+npm run cli -- generate examples/game-session.fsm -- --strategy random-walk --cases 50 --max-steps 25 --seed 2026 --output game-fuzz.json
 npm run cli -- validate examples/test-plans/turnstile-transition-cover.json
 npm run demo:cli
 npm run demo:modbus
 npm run demo:http
+npm run demo:github
 ```
 
 Настройка executable, allowlist окружения, JSON и файлы отчётов описаны в
