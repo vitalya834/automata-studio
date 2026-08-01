@@ -15,7 +15,7 @@ describe('runner CLI options', () => {
     expect(parseRunnerCliArgs([
       'run', '--plan', 'plan.json', '--adapter', 'cli', '--executable', 'node',
       '--arg', 'sut.cjs', '--arg', '--safe-mode', '--env', 'SUT_TOKEN',
-      '--response-timeout', '2500', '--report', 'result.json',
+      '--response-timeout', '2500', '--report', 'result.json', '--junit', 'junit.xml',
     ])).toEqual({
       kind: 'run',
       planPath: 'plan.json',
@@ -27,6 +27,8 @@ describe('runner CLI options', () => {
       startupTimeoutMs: undefined,
       responseTimeoutMs: 2500,
       reportPath: 'result.json',
+      junitPath: 'junit.xml',
+      htmlPath: undefined,
       format: 'text',
     });
   });
@@ -44,10 +46,10 @@ describe('runner CLI options', () => {
   it('parses a Modbus run with adapter configuration isolated from the plan', () => {
     expect(parseRunnerCliArgs([
       'run', 'plan.json', '--adapter', 'modbus', '--config', 'modbus.json',
-      '--format', 'json', '--report', 'result.json',
+      '--format', 'json', '--report', 'result.json', '--html', 'report.html',
     ])).toEqual({
       kind: 'run', planPath: 'plan.json', adapter: 'modbus', configPath: 'modbus.json',
-      format: 'json', reportPath: 'result.json',
+      format: 'json', reportPath: 'result.json', junitPath: undefined, htmlPath: 'report.html',
     });
   });
 });

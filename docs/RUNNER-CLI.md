@@ -32,7 +32,9 @@ npm run cli -- run path/to/plan.json `
   --executable path/to/sut.exe `
   --arg --json-lines `
   --response-timeout 5000 `
-  --report artifacts/result.json
+  --report artifacts/result.json `
+  --junit artifacts/junit.xml `
+  --html artifacts/report.html
 ```
 
 Repeat `--arg` for each argument and `--env NAME` for each environment variable
@@ -44,6 +46,7 @@ shell. See [the process protocol](adapters/CLI-PROCESS.md).
 - default text output contains the aggregate verdict, case results and steps;
 - `--format json` writes the complete result to stdout;
 - `--report file.json` saves the complete result independently of console mode;
+- `--junit file.xml` and `--html file.html` create CI and human evidence;
 - exit `0` means pass, `1` is a completed non-pass run, and `2` means invalid
   CLI input, an invalid plan or an infrastructure error.
 

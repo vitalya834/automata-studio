@@ -14,6 +14,8 @@ export type RunnerCliCommand =
       startupTimeoutMs?: number;
       responseTimeoutMs?: number;
       reportPath?: string;
+      junitPath?: string;
+      htmlPath?: string;
       format: OutputFormat;
     }
   | {
@@ -22,6 +24,8 @@ export type RunnerCliCommand =
       adapter: 'modbus';
       configPath: string;
       reportPath?: string;
+      junitPath?: string;
+      htmlPath?: string;
       format: OutputFormat;
     };
 
@@ -68,6 +72,8 @@ export function parseRunnerCliArgs(argv: string[]): RunnerCliCommand {
   let startupTimeoutMs: number | undefined;
   let responseTimeoutMs: number | undefined;
   let reportPath: string | undefined;
+  let junitPath: string | undefined;
+  let htmlPath: string | undefined;
   let format: OutputFormat = 'text';
 
   for (let index = planPath === undefined ? 1 : 2; index < argv.length; index += 1) {
@@ -86,6 +92,8 @@ export function parseRunnerCliArgs(argv: string[]): RunnerCliCommand {
       case '--startup-timeout': startupTimeoutMs = positiveInteger(value, flag); break;
       case '--response-timeout': responseTimeoutMs = positiveInteger(value, flag); break;
       case '--report': reportPath = value; break;
+      case '--junit': junitPath = value; break;
+      case '--html': htmlPath = value; break;
       case '--format':
         if (value !== 'text' && value !== 'json') {
           throw new RunnerCliUsageError('--format must be text or json.');
@@ -100,7 +108,7 @@ export function parseRunnerCliArgs(argv: string[]): RunnerCliCommand {
   if (kind === 'validate') {
     if (adapter !== undefined || executable !== undefined || configPath !== undefined || args.length > 0 || cwd !== undefined
       || envAllowlist.length > 0 || startupTimeoutMs !== undefined || responseTimeoutMs !== undefined
-      || reportPath !== undefined) {
+      || reportPath !== undefined || junitPath !== undefined || htmlPath !== undefined) {
       throw new RunnerCliUsageError('validate accepts only --plan and --format.');
     }
     return { kind, planPath, format };
@@ -115,7 +123,7 @@ export function parseRunnerCliArgs(argv: string[]): RunnerCliCommand {
       || startupTimeoutMs !== undefined || responseTimeoutMs !== undefined) {
       throw new RunnerCliUsageError('Modbus connection and mapping options belong in --config.');
     }
-    return { kind, planPath, adapter, configPath, reportPath, format };
+    return { kind, planPath, adapter, configPath, reportPath, junitPath, htmlPath, format };
   }
   if (configPath !== undefined) throw new RunnerCliUsageError('--config is only valid for the modbus adapter.');
   if (executable === undefined) throw new RunnerCliUsageError('--executable is required for the cli adapter.');
@@ -131,6 +139,8 @@ export function parseRunnerCliArgs(argv: string[]): RunnerCliCommand {
     startupTimeoutMs,
     responseTimeoutMs,
     reportPath,
+    junitPath,
+    htmlPath,
     format,
   };
 }

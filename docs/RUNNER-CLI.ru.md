@@ -32,7 +32,9 @@ npm run cli -- run path/to/plan.json `
   --executable path/to/sut.exe `
   --arg --json-lines `
   --response-timeout 5000 `
-  --report artifacts/result.json
+  --report artifacts/result.json `
+  --junit artifacts/junit.xml `
+  --html artifacts/report.html
 ```
 
 Повторяйте `--arg` для аргументов и `--env NAME` для разрешённых переменных
@@ -44,6 +46,7 @@ npm run cli -- run path/to/plan.json `
 - text по умолчанию содержит общий вердикт, случаи и шаги;
 - `--format json` пишет полный результат в stdout;
 - `--report file.json` сохраняет полный результат независимо от режима консоли;
+- `--junit file.xml` и `--html file.html` создают отчёты для CI и человека;
 - код `0` означает pass, `1` — завершённый non-pass, `2` — неверные аргументы,
   план или инфраструктурная ошибка.
 

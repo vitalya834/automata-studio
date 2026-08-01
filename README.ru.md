@@ -15,6 +15,15 @@ Automata Studio — гибридная C++/TypeScript-платформа мод�
 ядром продукта. Один абстрактный тест-план можно выполнять на симуляторе,
 CLI-процессе, HTTP-сервисе, Modbus/CAN-устройстве или другом SUT через адаптер.
 
+## Возможности v0.8
+
+- детерминированные JUnit XML и автономные HTML evidence reports;
+- один testcase на случай Test Case IR, вердикты и полные трассы шагов;
+- защита XML/HTML от враждебных строк модели и SUT;
+- флаги `--junit`, `--html` и `--report` создают все форматы за один запуск;
+- статический HTML без scripts, внешних ресурсов и event handlers;
+- GitHub Actions CI проверяет тесты, сборки, C++ и обе end-to-end демонстрации.
+
 ## Возможности v0.7
 
 - запускаемый Node.js runner: проверка планов, внешние SUT, text/JSON-трассы,
@@ -118,6 +127,7 @@ npm run demo:modbus
 - [Временное тестирование](docs/TIMED-TESTING.ru.md)
 - [Runner CLI для внешних SUT](docs/RUNNER-CLI.ru.md)
 - [Modbus TCP‑адаптер](docs/adapters/MODBUS-TCP.ru.md)
+- [JUnit и HTML‑отчёты](docs/REPORTS.ru.md)
 - [CLI Process SUT Adapter](docs/adapters/CLI-PROCESS.ru.md)
 
 Восстановленное Java-приложение 2010 года хранится вне репозитория в

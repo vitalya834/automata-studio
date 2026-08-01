@@ -57,6 +57,7 @@ Automata Studio генерирует формальные модели авто�
 - TypeScript/C++ runner и in-memory адаптеры;
 - защищённый Node.js CLI-process адаптер для внешних программ;
 - Modbus TCP‑адаптер с запретом записи по умолчанию и loopback‑тестами;
+- детерминированные JSON, JUnit XML и автономные HTML‑отчёты;
 - браузерная лаборатория, трассы, JSON-экспорт и C++ CLI.
 
 ### Conformance FSM

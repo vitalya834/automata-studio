@@ -4,8 +4,9 @@ import { CliProcessAdapter } from './adapters/cli-process';
 import { ModbusTcpAdapter, type ModbusTcpAdapterOptions } from './adapters/modbus-tcp';
 import { parseTestPlan, runTestPlan, type TestRunResult } from './testing';
 import { parseRunnerCliArgs, RunnerCliUsageError } from './runner-cli-options';
+import { testRunToHtml, testRunToJUnit } from './reports';
 
-const HELP = `Automata Studio test runner v0.6
+const HELP = `Automata Studio test runner v0.8
 
 Usage:
   automata validate <plan.json> [--format text|json]
@@ -19,11 +20,15 @@ CLI adapter options:
   --startup-timeout <ms>        Process startup deadline
   --response-timeout <ms>       Adapter response deadline
   --report <file>               Write the complete JSON result
+  --junit <file>                Write a JUnit XML evidence report
+  --html <file>                 Write a standalone HTML evidence report
   --format text|json            Console output format (default: text)
 
 Modbus adapter options:
   --config <file>               Host, unit ID, symbol mapping and write gate
   --report <file>               Write the complete JSON result
+  --junit <file>                Write a JUnit XML evidence report
+  --html <file>                 Write a standalone HTML evidence report
   --format text|json            Console output format (default: text)
 
 Examples:
@@ -120,9 +125,11 @@ async function main(): Promise<number> {
     : new ModbusTcpAdapter(await readModbusConfig(command.configPath));
   const result = await runTestPlan(plan, adapter);
   const json = JSON.stringify(result, null, 2);
-  if (command.reportPath !== undefined) {
-    await writeFile(resolve(command.reportPath), `${json}\n`, 'utf8');
-  }
+  const writes: Promise<void>[] = [];
+  if (command.reportPath !== undefined) writes.push(writeFile(resolve(command.reportPath), `${json}\n`, 'utf8'));
+  if (command.junitPath !== undefined) writes.push(writeFile(resolve(command.junitPath), testRunToJUnit(result), 'utf8'));
+  if (command.htmlPath !== undefined) writes.push(writeFile(resolve(command.htmlPath), testRunToHtml(result), 'utf8'));
+  await Promise.all(writes);
   process.stdout.write(`${command.format === 'json' ? json : resultText(result)}\n`);
   return result.verdict === 'pass' ? 0 : 1;
 }
