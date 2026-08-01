@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml)
 [![Browser demo](https://img.shields.io/badge/live-browser_demo-50d1c5)](https://vitalya834.github.io/automata-studio/)
-[![Version](https://img.shields.io/badge/version-1.3.1-8b9cff)](https://github.com/vitalya834/automata-studio/releases)
+[![Version](https://img.shields.io/badge/version-1.3.2-8b9cff)](https://github.com/vitalya834/automata-studio/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-f4c95d)](LICENSE)
 
 **Generate behavioral models, synthesize test campaigns, run them against real
@@ -49,6 +49,8 @@ Download the assisted x64 Setup or the no-install Portable executable from
 The desktop shell is sandboxed, bundles the workbench and runner resources, and
 works without a local Node.js installation. The first v1.3 artifacts are not
 yet Authenticode-signed, so verify their SHA-256 checksum before running them.
+The assisted installer uses branded header/sidebar artwork and creates Start
+menu and desktop shortcuts with the Automata Studio icon.
 See the [desktop guide](docs/DESKTOP.md) for build and security details.
 
 ## v1.2 bilingual responsive workspace
