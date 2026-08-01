@@ -2,6 +2,8 @@
 
 [English](README.md) | [Русский](README.ru.md)
 
+[![CI](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml)
+
 Automata Studio — гибридная C++/TypeScript-платформа модельного тестирования.
 Она генерирует модели конечных автоматов по воспроизводимым ограничениям,
 импортирует старый формат `.fsm`, проверяет свойства автоматов, синтезирует

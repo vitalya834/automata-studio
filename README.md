@@ -2,6 +2,8 @@
 
 [English](README.md) | [Русский](README.ru.md)
 
+[![CI](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml)
+
 Automata Studio is a hybrid C++/TypeScript model-based testing workbench. It
 generates finite-state models from reproducible constraints, imports the legacy
 `.fsm` format, validates machine properties, synthesizes transition-cover test
