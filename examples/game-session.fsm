@@ -1,0 +1,13 @@
+# Game session model used by the full HTTP product pipeline
+machine GameSession
+state menu
+state playing
+state paused
+state victory
+final victory
+initial menu
+
+menu --start / playing--> playing
+playing --pause / paused--> paused
+paused --resume / playing--> playing
+playing --win / victory--> victory

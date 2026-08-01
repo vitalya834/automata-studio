@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "1.0",
+  "id": "turnstile-transition-cover",
+  "name": "Turnstile transition cover",
+  "modelId": "Turnstile",
+  "metadata": {
+    "adapter": "in-memory",
+    "generator": "transition-cover",
+    "seed": 2025
+  },
+  "cases": [
+    {
+      "id": "turnstile-tc-1",
+      "name": "Unlock with a coin",
+      "metadata": {
+        "targetTransition": 0
+      },
+      "steps": [
+        {
+          "input": "coin",
+          "allowedExpectedOutputs": ["unlock"],
+          "timeoutMs": 1000
+        }
+      ]
+    },
+    {
+      "id": "turnstile-tc-2",
+      "name": "Lock after a push",
+      "metadata": {
+        "targetTransition": 2
+      },
+      "steps": [
+        {
+          "input": "coin",
+          "allowedExpectedOutputs": ["unlock"],
+          "timeoutMs": 1000
+        },
+        {
+          "input": "push",
+          "allowedExpectedOutputs": ["lock"],
+          "timeoutMs": 1000
+        }
+      ]
+    }
+  ]
+}

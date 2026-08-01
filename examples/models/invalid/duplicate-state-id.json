@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0",
+  "id": "duplicate-state-id",
+  "name": "DuplicateStateId",
+  "description": "Invalid: state id `a` is declared twice (unique-ID family).",
+  "modelKind": "mealy",
+  "semanticProfile": "deterministic.partial",
+  "inputAlphabet": { "symbols": [{ "id": "x" }] },
+  "outputAlphabet": { "symbols": [{ "id": "o" }] },
+  "states": [{ "id": "a" }, { "id": "a" }],
+  "transitions": [{ "id": "t1", "from": "a", "to": "a", "input": "x", "output": "o" }],
+  "initial": { "stateId": "a" },
+  "provenance": {
+    "createdBy": "manual",
+    "sourceFormat": "handwritten",
+    "timestamp": "2026-07-31T12:00:00Z"
+  }
+}

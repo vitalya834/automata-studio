@@ -1,16 +1,25 @@
 {
-  "name": "fsm-generator",
+  "name": "automata-studio",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:pages": "tsc && vite build --base /automata-studio/",
+    "cli:build": "vite build --ssr src/runner-cli.ts --outDir dist-cli",
+    "cli": "npm run cli:build --silent && node dist-cli/runner-cli.js",
+    "dataset": "vite build --ssr src/dataset-cli.ts --outDir dist-cli --emptyOutDir false --logLevel warn && node dist-cli/dataset-cli.js",
+    "demo:cli": "npm run cli -- run examples/test-plans/turnstile-transition-cover.json --adapter cli --executable node --arg test-fixtures/cli-sut/turnstile.cjs",
+    "demo:modbus": "npm run cli:build --silent && vite build --ssr src/modbus-demo.ts --outDir dist-cli --emptyOutDir false --logLevel warn && node dist-cli/modbus-demo.js",
+    "demo:http": "npm run cli:build --silent && vite build --ssr src/http-demo.ts --outDir dist-cli --emptyOutDir false --logLevel warn && node dist-cli/http-demo.js",
     "test": "vitest run",
     "cpp:build": "powershell -ExecutionPolicy Bypass -File scripts/build-cpp.ps1",
     "cpp:test": "powershell -ExecutionPolicy Bypass -File scripts/build-cpp.ps1 -Test"
   },
   "devDependencies": {
+    "@types/node": "^26.1.2",
+    "ajv": "^8.20.0",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vitest": "^3.1.4"

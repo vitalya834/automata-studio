@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0",
+  "id": "modbus-lamp-status",
+  "name": "Read lamp status over Modbus TCP",
+  "modelId": "lamp-controller",
+  "metadata": {
+    "transportIndependent": true
+  },
+  "cases": [
+    {
+      "id": "lamp-on",
+      "name": "Lamp reports on",
+      "metadata": {},
+      "steps": [
+        {
+          "input": "read_lamp",
+          "allowedExpectedOutputs": ["lamp_on"],
+          "timeoutMs": 2000
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0",
+  "id": "tfsm-lamp-output-delay",
+  "name": "LampWithOutputDelay",
+  "description": "TFSM (outputDelays profile): the lamp turns on 2 time units after the switch, and off within [0, 1).",
+  "modelKind": "tfsm",
+  "semanticProfile": "deterministic.complete",
+  "timingProfile": "outputDelays",
+  "timeUnit": "ms",
+  "inputAlphabet": {
+    "symbols": [{ "id": "on" }, { "id": "off" }]
+  },
+  "outputAlphabet": {
+    "symbols": [{ "id": "lit" }, { "id": "dark" }]
+  },
+  "states": [{ "id": "off_state" }, { "id": "on_state" }],
+  "transitions": [
+    {
+      "id": "t1",
+      "from": "off_state",
+      "to": "on_state",
+      "input": "on",
+      "output": "lit",
+      "outputDelay": { "kind": "constant", "value": 2 }
+    },
+    {
+      "id": "t2",
+      "from": "on_state",
+      "to": "off_state",
+      "input": "off",
+      "output": "dark",
+      "outputDelay": {
+        "kind": "interval",
+        "interval": {
+          "lower": { "value": 0, "inclusive": true },
+          "upper": { "value": 1, "inclusive": false }
+        }
+      }
+    },
+    { "id": "t3", "from": "off_state", "to": "off_state", "input": "off", "output": "dark" },
+    { "id": "t4", "from": "on_state", "to": "on_state", "input": "on", "output": "lit" }
+  ],
+  "initial": { "stateId": "off_state" },
+  "provenance": {
+    "createdBy": "manual",
+    "sourceFormat": "handwritten",
+    "timestamp": "2026-07-31T12:00:00Z"
+  }
+}

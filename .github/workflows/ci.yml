@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: TypeScript, demos and C++
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Set up MinGW C++
+        id: msys2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: mingw-w64-x86_64-gcc
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript tests
+        run: npm test
+
+      - name: Build browser workbench
+        run: npm run build
+
+      - name: Build browser demo for GitHub Pages
+        run: npm run build:pages
+
+      - name: Build external SUT runner
+        run: npm run cli:build
+
+      - name: Generate and validate a random campaign
+        run: |
+          node dist-cli/runner-cli.js generate examples/game-session.fsm --strategy random-walk --cases 20 --max-steps 20 --seed ci-2026 --output $env:RUNNER_TEMP\game-random.json
+          node dist-cli/runner-cli.js validate $env:RUNNER_TEMP\game-random.json
+
+      - name: Run CLI-process end-to-end demo
+        run: npm run demo:cli
+
+      - name: Run Modbus TCP loopback end-to-end demo
+        run: npm run demo:modbus
+
+      - name: Run HTTP game-service end-to-end demo
+        run: npm run demo:http
+
+      - name: Test C++ core and runner
+        run: npm run cpp:test
+        env:
+          CXX: ${{ steps.msys2.outputs.msys2-location }}\mingw64\bin\g++.exe
+
+      - name: Build C++ CLI
+        run: npm run cpp:build
+        env:
+          CXX: ${{ steps.msys2.outputs.msys2-location }}\mingw64\bin\g++.exe

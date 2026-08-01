@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "1.0",
+  "id": "efsm-login-retry",
+  "name": "LoginWithRetry",
+  "description": "EFSM login: at most three password attempts tracked by a retry counter.",
+  "modelKind": "efsm",
+  "semanticProfile": "deterministic.partial",
+  "inputAlphabet": {
+    "symbols": [
+      { "id": "login", "params": [{ "name": "password", "type": "string" }] },
+      { "id": "reset" }
+    ]
+  },
+  "outputAlphabet": {
+    "symbols": [
+      { "id": "granted" },
+      { "id": "denied", "params": [{ "name": "attemptsLeft", "type": "int" }] },
+      { "id": "blocked" }
+    ]
+  },
+  "variables": [
+    { "name": "retries", "type": "int", "description": "Failed attempts so far." }
+  ],
+  "states": [{ "id": "idle" }, { "id": "authorized" }, { "id": "locked" }],
+  "transitions": [
+    {
+      "id": "t_ok",
+      "from": "idle",
+      "to": "authorized",
+      "input": "login",
+      "output": "granted",
+      "guard": { "language": "c-expr", "text": "password == secret && retries < 3" },
+      "updates": [{ "target": "retries", "language": "c-expr", "text": "0" }]
+    },
+    {
+      "id": "t_fail",
+      "from": "idle",
+      "to": "idle",
+      "input": "login",
+      "output": "denied",
+      "guard": { "language": "c-expr", "text": "password != secret && retries < 2" },
+      "updates": [{ "target": "retries", "language": "c-expr", "text": "retries + 1" }]
+    },
+    {
+      "id": "t_block",
+      "from": "idle",
+      "to": "locked",
+      "input": "login",
+      "output": "blocked",
+      "guard": { "language": "c-expr", "text": "password != secret && retries >= 2" },
+      "updates": [{ "target": "retries", "language": "c-expr", "text": "retries + 1" }]
+    },
+    {
+      "id": "t_reset",
+      "from": "locked",
+      "to": "idle",
+      "input": "reset",
+      "updates": [{ "target": "retries", "language": "c-expr", "text": "0" }]
+    }
+  ],
+  "initial": {
+    "stateId": "idle",
+    "variableValues": { "retries": 0 }
+  },
+  "provenance": {
+    "createdBy": "manual",
+    "sourceFormat": "handwritten",
+    "timestamp": "2026-07-31T12:00:00Z"
+  }
+}
