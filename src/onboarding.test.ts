@@ -2,20 +2,24 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { analyzeMachine, parseMachine } from './fsm.ts';
+import { generateTransitionCover } from './fsm.ts';
+import { generateTimedBoundaryCases } from './timed-testing.ts';
+import { modelIrToMachine } from './model-ir-adapter.ts';
+import { validateModel } from './model-ir.ts';
 import {
+  dismissOnboarding,
   getTemplate,
+  isOnboardingDismissed,
+  ONBOARDING_STORAGE_KEY,
   onboardingJourney,
   onboardingTemplates,
+  reopenOnboarding,
   resolveTemplateAction,
   templateLinkUrl,
-  type TimedExampleId,
+  type OnboardingStorage,
 } from './onboarding.ts';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
-
-/** Timed example ids offered by the workbench dropdown in src/main.ts. */
-const TIMED_EXAMPLE_IDS: readonly TimedExampleId[] = ['guards', 'timeouts', 'delays', 'combined', 'alur-dill'];
 
 describe('template catalog', () => {
   it('contains the six onboarding scenarios', () => {
@@ -26,7 +30,7 @@ describe('template catalog', () => {
 
   it('fills every explanatory field on every card', () => {
     for (const template of onboardingTemplates) {
-      for (const field of ['title', 'subtitle', 'what', 'states', 'inputs', 'outputs', 'adapter', 'adapterBadge', 'command'] as const) {
+      for (const field of ['title', 'subtitle', 'description', 'target', 'strategy', 'what', 'states', 'inputs', 'outputs', 'adapter', 'adapterBadge', 'command'] as const) {
         expect(template[field].trim(), `${template.id}.${field}`).not.toBe('');
       }
       expect(template.links.length, `${template.id}.links`).toBeGreaterThan(0);
@@ -76,43 +80,80 @@ describe('template selection', () => {
     expect(resolveTemplateAction('nope')).toBeUndefined();
   });
 
-  it('game action loads a valid deterministic DSL model', () => {
-    const action = resolveTemplateAction('game');
-    expect(action?.kind).toBe('load-dsl');
-    if (action?.kind !== 'load-dsl') return;
-    const parsed = parseMachine(action.source);
-    expect(parsed.machine).toBeDefined();
-    expect(parsed.diagnostics.filter((item) => item.severity === 'error')).toEqual([]);
-    expect(parsed.machine!.name).toBe('GameSession');
-    expect(analyzeMachine(parsed.machine!).deterministic).toBe(true);
+  it('loads a canonical, valid Model IR document for every template', () => {
+    for (const template of onboardingTemplates) {
+      const action = resolveTemplateAction(template.id);
+      expect(action?.kind, template.id).toBe('load-model');
+      if (!action) continue;
+      const validation = validateModel(action.model);
+      expect(validation.ok, `${template.id}: ${validation.ok ? '' : JSON.stringify(validation.diagnostics)}`).toBe(true);
+    }
   });
 
-  it('game DSL source stays in sync with examples/game-session.fsm', () => {
-    const action = resolveTemplateAction('game');
-    if (action?.kind !== 'load-dsl') throw new Error('game must be load-dsl');
-    const file = readFileSync(join(repoRoot, 'examples', 'game-session.fsm'), 'utf8');
-    expect(action.source.replace(/\r\n/g, '\n')).toBe(file.replace(/\r\n/g, '\n'));
+  it('offers five browser-loadable Mealy campaigns and one timed campaign', () => {
+    const kinds = onboardingTemplates.map((template) => template.action.model.modelKind);
+    expect(kinds.filter((kind) => kind === 'mealy')).toHaveLength(5);
+    expect(kinds.filter((kind) => kind === 'tfsm')).toHaveLength(1);
   });
 
-  it('timed action targets a bundled workbench example', () => {
-    const action = resolveTemplateAction('timed');
-    expect(action?.kind).toBe('load-timed');
-    if (action?.kind !== 'load-timed') return;
-    expect(TIMED_EXAMPLE_IDS).toContain(action.exampleId);
-  });
-
-  it('runner-only scenarios expose commands instead of imitating execution', () => {
-    for (const id of ['rest-api', 'modbus', 'ml-inference', 'cli'] as const) {
-      expect(resolveTemplateAction(id)?.kind, id).toBe('commands-only');
+  it('prepares a non-empty campaign from every one-click model', () => {
+    for (const template of onboardingTemplates) {
+      const model = template.action.model;
+      if (model.modelKind === 'tfsm') {
+        expect(generateTimedBoundaryCases(model).length, template.id).toBeGreaterThan(0);
+        continue;
+      }
+      const imported = modelIrToMachine(model);
+      expect(imported.ok, template.id).toBe(true);
+      if (!imported.ok) continue;
+      expect(generateTransitionCover(imported.machine).tests.length, template.id).toBeGreaterThan(0);
     }
   });
 });
 
 describe('user journey', () => {
-  it('describes the five-step path from template to report', () => {
+  it('describes Model -> Generate -> Run -> Report', () => {
     expect(onboardingJourney.map((step) => step.title)).toEqual([
-      'Choose template', 'Inspect graph', 'Generate tests', 'Run adapter', 'Inspect report',
+      'Model', 'Generate', 'Run', 'Report',
     ]);
     for (const step of onboardingJourney) expect(step.detail.trim()).not.toBe('');
+  });
+});
+
+describe('onboarding persistence', () => {
+  function memoryStorage(initial: Record<string, string> = {}): OnboardingStorage {
+    const values = new Map(Object.entries(initial));
+    return {
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => { values.set(key, value); },
+      removeItem: (key) => { values.delete(key); },
+    };
+  }
+
+  it('persists dismissal and allows reopening the tour', () => {
+    const storage = memoryStorage();
+    expect(isOnboardingDismissed(storage)).toBe(false);
+    dismissOnboarding(storage);
+    expect(isOnboardingDismissed(storage)).toBe(true);
+    reopenOnboarding(storage);
+    expect(isOnboardingDismissed(storage)).toBe(false);
+  });
+
+  it('uses only a namespaced boolean preference', () => {
+    const storage = memoryStorage({ [ONBOARDING_STORAGE_KEY]: 'false' });
+    expect(isOnboardingDismissed(storage)).toBe(false);
+    dismissOnboarding(storage);
+    expect(isOnboardingDismissed(storage)).toBe(true);
+  });
+
+  it('fails open when browser storage is unavailable', () => {
+    const unavailable: OnboardingStorage = {
+      getItem: () => { throw new Error('blocked'); },
+      setItem: () => { throw new Error('blocked'); },
+      removeItem: () => { throw new Error('blocked'); },
+    };
+    expect(isOnboardingDismissed(unavailable)).toBe(false);
+    expect(() => dismissOnboarding(unavailable)).not.toThrow();
+    expect(() => reopenOnboarding(unavailable)).not.toThrow();
   });
 });

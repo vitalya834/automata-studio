@@ -16,6 +16,34 @@ core. Modbus is one future adapter, not the product boundary: the same abstract
 test plan can target a simulator, CLI process, HTTP service, CAN device or other
 SUT through an adapter.
 
+## Quick start
+
+```powershell
+npm install
+npm run dev
+```
+
+Open the local URL printed by Vite. On the first visit, a four-step tour
+explains **Model → Generate → Run → Report**. The tour can be skipped and
+reopened from **Tour / Обзор**; only a dismissal preference is stored locally.
+
+## Five-minute tutorial
+
+1. **Model (minute 1):** choose any card in **Start testing** and click
+   **Use template / Открыть**. All six cards load a canonical Model IR example;
+   no JSON editing is required.
+2. **Inspect (minute 2):** review the state graph, DSL and model properties.
+   The REST, Modbus, CLI, timed-door, game/NPC and ML templates state their
+   expected target and suggested strategy.
+3. **Generate (minute 3):** a Mealy template immediately prepares a
+   transition-cover campaign. A timed template prepares boundary cases before,
+   on and after each guard boundary.
+4. **Run (minute 4):** click **Run in simulator** for browser execution. To test
+   a real CLI, HTTP or Modbus SUT, copy the Node runner command from its card.
+5. **Report (minute 5):** inspect step traces and verdicts in the browser. Use
+   runner flags documented in [Reports](docs/REPORTS.md) to save JSON, JUnit XML
+   and standalone HTML evidence for CI.
+
 ## v1.1 onboarding and template gallery
 
 - the browser workbench opens with a "Start testing / Начать тестирование"
@@ -24,13 +52,13 @@ SUT through an adapter.
   device, ML inference service, timed controller and CLI application;
 - every card explains what is tested, which states/inputs/outputs the model
   uses, which adapter is required and which real command to run;
-- "Open example" loads the game model into the DSL editor and the timed
-  controller into the Timed Testing Workbench — right in the browser;
-- runner-only scenarios (HTTP, Modbus, ML, CLI) show real `npm run` commands
-  and links to existing examples and docs instead of imitating execution the
-  browser cannot perform;
-- a five-step journey strip: choose template → inspect graph → generate
-  tests → run adapter → inspect report;
+- every card loads a validated canonical model in one click; Mealy scenarios
+  prepare a transition-cover campaign and the timed door prepares boundary
+  tests in the Timed Testing Workbench;
+- real `npm run` commands and documentation links remain available for Node-only
+  HTTP, Modbus and CLI execution;
+- a dismissible four-step tour explains Model → Generate → Run → Report and can
+  be reopened without storing credentials;
 - the template catalog and selection logic live in a typed module
   (`src/onboarding.ts`) with unit tests that pin every advertised command,
   file and link to something that actually exists in the repository.

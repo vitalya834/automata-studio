@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0",
+  "id": "template-ml-inference",
+  "name": "MlInferencePipeline",
+  "description": "Behavioural contract for request validation and deterministic inference outcomes.",
+  "modelKind": "mealy",
+  "semanticProfile": "deterministic.partial",
+  "inputAlphabet": { "symbols": [{ "id": "submit_valid" }, { "id": "submit_invalid" }, { "id": "validation_ok" }, { "id": "inference_ok" }] },
+  "outputAlphabet": { "symbols": [{ "id": "accepted" }, { "id": "rejected" }, { "id": "running" }, { "id": "prediction" }] },
+  "states": [{ "id": "idle" }, { "id": "validating" }, { "id": "inferencing" }, { "id": "completed" }, { "id": "rejected" }],
+  "transitions": [
+    { "id": "t1", "from": "idle", "to": "validating", "input": "submit_valid", "output": "accepted" },
+    { "id": "t2", "from": "idle", "to": "rejected", "input": "submit_invalid", "output": "rejected" },
+    { "id": "t3", "from": "validating", "to": "inferencing", "input": "validation_ok", "output": "running" },
+    { "id": "t4", "from": "inferencing", "to": "completed", "input": "inference_ok", "output": "prediction" }
+  ],
+  "initial": { "stateId": "idle" },
+  "provenance": { "createdBy": "Automata Studio", "createdByVersion": "1.1.0", "sourceFormat": "template", "timestamp": "2026-08-01T00:00:00Z" }
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0",
+  "id": "template-rest-order",
+  "name": "RestOrderWorkflow",
+  "description": "REST order lifecycle with successful create, payment, shipment and cancellation paths.",
+  "modelKind": "mealy",
+  "semanticProfile": "deterministic.partial",
+  "inputAlphabet": { "symbols": [{ "id": "create" }, { "id": "pay" }, { "id": "ship" }, { "id": "cancel" }] },
+  "outputAlphabet": { "symbols": [{ "id": "created_201" }, { "id": "paid_200" }, { "id": "shipped_200" }, { "id": "cancelled_200" }] },
+  "states": [{ "id": "empty" }, { "id": "created" }, { "id": "paid" }, { "id": "shipped" }, { "id": "cancelled" }],
+  "transitions": [
+    { "id": "t1", "from": "empty", "to": "created", "input": "create", "output": "created_201" },
+    { "id": "t2", "from": "created", "to": "paid", "input": "pay", "output": "paid_200" },
+    { "id": "t3", "from": "paid", "to": "shipped", "input": "ship", "output": "shipped_200" },
+    { "id": "t4", "from": "created", "to": "cancelled", "input": "cancel", "output": "cancelled_200" }
+  ],
+  "initial": { "stateId": "empty" },
+  "provenance": { "createdBy": "Automata Studio", "createdByVersion": "1.1.0", "sourceFormat": "template", "timestamp": "2026-08-01T00:00:00Z" }
+}

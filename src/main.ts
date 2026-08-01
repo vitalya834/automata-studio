@@ -29,6 +29,9 @@ import {
 import {
   onboardingJourney,
   onboardingTemplates,
+  dismissOnboarding,
+  isOnboardingDismissed,
+  reopenOnboarding,
   resolveTemplateAction,
   templateLinkUrl,
 } from './onboarding.ts';
@@ -62,7 +65,7 @@ Unlocked --coin / return--> Unlocked`;
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <header class="topbar">
     <div class="brand"><span class="brand-mark">A</span><div><span class="eyebrow">AUTOMATA ENGINEERING WORKBENCH</span><h1>Automata Studio</h1></div></div>
-    <div class="header-actions"><span class="version">CORE / UI 1.0</span><button id="build" class="primary">Анализировать <kbd>Ctrl↵</kbd></button></div>
+    <div class="header-actions"><span class="version">CORE 1.0 / UI 1.1</span><button id="reopen-tour" class="quiet tour-reopen">Tour / Обзор</button><button id="build" class="primary">Анализировать <kbd>Ctrl↵</kbd></button></div>
   </header>
 
   <main>
@@ -79,6 +82,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <label class="switch-row"><input id="complete" type="checkbox" checked><span class="switch"></span><span>Полный</span></label>
         <button id="generate" class="generate-button">Сгенерировать <span>→</span></button>
       </div>
+      <aside class="context-help"><strong>Generate</strong><span>Не знаете параметры? Выберите шаблон выше: он сразу построит модель и transition-cover кампанию. Генератор нужен для воспроизводимых случайных FSM.</span></aside>
     </section>
 
     <section class="panel timed-panel" aria-labelledby="timed-title">
@@ -135,7 +139,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <article class="panel tests-panel">
         <div class="panel-title"><div><span class="step">05</span><span>Transition cover</span></div><span id="test-count" class="badge neutral">0 TESTS</span></div>
         <div class="test-head"><span>#</span><span>Входная последовательность</span><span>Ожидаемые выходы</span></div>
-        <div id="tests" class="test-list"><div class="empty-state">Тесты появятся после построения модели</div></div>
+        <div id="tests" class="test-list"><div class="empty-state"><strong>Тестовая кампания пока пуста</strong><span>Выберите шаблон или нажмите «Анализировать», чтобы построить transition cover.</span></div></div>
+        <aside class="context-help compact"><strong>Generate tests</strong><span>Transition cover проходит каждый достижимый переход хотя бы один раз; random walk доступен в CLI.</span></aside>
       </article>
     </section>
     <section class="panel execution-panel" aria-labelledby="execution-title">
@@ -160,7 +165,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="result-card duration"><span>DURATION</span><strong id="run-duration">0 ms</strong></div>
       </div>
       <div class="trace-head"><span>#</span><span>Вход</span><span>Ожидалось</span><span>Получено</span><span>Время</span><span>Verdict</span></div>
-      <div id="execution-trace" class="execution-trace"><div class="empty-state">Тесты запускаются только вручную</div></div>
+      <div id="execution-trace" class="execution-trace"><div class="empty-state"><strong>Запуск ещё не выполнен</strong><span>Загрузите шаблон, затем запустите подготовленную кампанию в симуляторе.</span></div></div>
+      <aside class="context-help report-help"><strong>Run → Report</strong><span>Браузер показывает трассу и verdict. Для реального CLI, HTTP или Modbus SUT используйте указанную в карточке команду; runner создаёт JSON, JUnit XML и автономный HTML-отчёт.</span><code>npm run cli -- run plan.json --adapter … --report reports</code></aside>
     </section>
   </main>
   <footer><span>TEXT</span><i></i><span>MODEL</span><i></i><span>ANALYSIS</span><i></i><span>TESTS</span><i></i><span>EXECUTION</span></footer>`;
@@ -200,15 +206,12 @@ function renderOnboardingSection(): string {
     <li><span class="journey-index">${index + 1}</span><div><strong>${escapeXml(step.title)}</strong><small>${escapeXml(step.detail)}</small></div></li>`).join('');
   const cards = onboardingTemplates.map((template) => {
     const rows = [
-      ['Что тестируется', template.what],
-      ['Состояния', template.states],
-      ['Входы', template.inputs],
-      ['Выходы', template.outputs],
+      ['Описание', template.description],
+      ['Цель / Target', template.target],
+      ['Стратегия', template.strategy],
       ['Адаптер', template.adapter],
     ].map(([label, value]) => `<div><dt>${escapeXml(label)}</dt><dd>${escapeXml(value)}</dd></div>`).join('');
-    const openButton = template.action.kind === 'commands-only'
-      ? ''
-      : `<button class="primary open-example" data-template="${escapeXml(template.id)}">Open example</button>`;
+    const openButton = `<button class="primary open-example" data-template="${escapeXml(template.id)}">Use template / Открыть</button>`;
     const links = template.links.map((link) =>
       `<a href="${escapeXml(templateLinkUrl(link))}" target="_blank" rel="noreferrer noopener">${escapeXml(link.label)} ↗</a>`).join('');
     return `
@@ -222,7 +225,11 @@ function renderOnboardingSection(): string {
   }).join('');
   return `
     <section class="panel onboarding" aria-labelledby="onboarding-title">
-      <div class="section-heading"><div><span class="step">00</span><h2 id="onboarding-title">Start testing · Начать тестирование</h2></div><p>Выберите готовый сценарий — знание терминологии FSM не требуется</p></div>
+      <div id="first-run-tour" class="tour-card" role="dialog" aria-labelledby="tour-title" hidden>
+        <div><span id="tour-progress" class="badge">1 / ${onboardingJourney.length}</span><h3 id="tour-title"></h3><p id="tour-detail"></p></div>
+        <div class="tour-actions"><button id="skip-tour" class="quiet">Skip / Пропустить</button><button id="next-tour" class="primary">Next / Далее</button></div>
+      </div>
+      <div class="section-heading"><div><span class="step">00</span><h2 id="onboarding-title">Start testing · Начать тестирование</h2></div><p>Шесть моделей — один клик до готовой тестовой кампании</p></div>
       <ol class="journey" aria-label="Путь пользователя">${journey}</ol>
       <div class="template-grid">${cards}</div>
     </section>`;
@@ -654,18 +661,18 @@ $<HTMLElement>('.onboarding').addEventListener('click', async (event) => {
   const openButton = target?.closest<HTMLButtonElement>('.open-example');
   if (openButton?.dataset.template) {
     const action = resolveTemplateAction(openButton.dataset.template);
-    if (!action || action.kind === 'commands-only') return;
-    if (action.kind === 'load-dsl') {
-      source.value = action.source;
-      build();
-      $('#format-badge').textContent = action.formatBadge;
-      $<HTMLElement>('.editor-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-      const model = timedExamples.get(action.exampleId);
-      if (!model) return;
-      loadTimedModel(model);
-      $<HTMLSelectElement>('#timed-example').value = action.exampleId;
+    if (!action) return;
+    if (action.model.modelKind === 'tfsm') {
+      loadTimedModel(action.model);
+      $<HTMLSelectElement>('#timed-example').value = '';
       $<HTMLElement>('.timed-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (action.model.modelKind === 'mealy') {
+      const imported = modelIrToMachine(action.model);
+      if (!imported.ok) return;
+      source.value = machineToDsl(imported.machine);
+      build(false, imported.model);
+      $('#format-badge').textContent = 'TEMPLATE · MODEL IR 1.0';
+      $<HTMLElement>('.editor-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     return;
   }
@@ -680,6 +687,54 @@ $<HTMLElement>('.onboarding').addEventListener('click', async (event) => {
     window.setTimeout(() => { copyButton.textContent = 'Copy'; }, 1_500);
   }
 });
+
+let tourStep = 0;
+const tour = $<HTMLElement>('#first-run-tour');
+const tourTitle = $<HTMLElement>('#tour-title');
+const tourDetail = $<HTMLElement>('#tour-detail');
+const tourProgress = $<HTMLElement>('#tour-progress');
+const nextTourButton = $<HTMLButtonElement>('#next-tour');
+
+function renderTourStep(): void {
+  const step = onboardingJourney[tourStep];
+  tourTitle.textContent = `${step.title}: ${step.detail}`;
+  tourDetail.textContent = tourStep === 0
+    ? 'Начните с одной из шести проверенных моделей ниже — писать JSON вручную не нужно.'
+    : tourStep === 1
+      ? 'Automata Studio автоматически строит transition-cover тесты и ожидаемые выходы.'
+      : tourStep === 2
+        ? 'Запустите модель в браузере или подключите CLI, HTTP и Modbus через Node runner.'
+        : 'Изучите трассу и verdict; для CI экспортируйте JSON, JUnit XML или HTML evidence.';
+  tourProgress.textContent = `${tourStep + 1} / ${onboardingJourney.length}`;
+  nextTourButton.textContent = tourStep === onboardingJourney.length - 1 ? 'Start / Начать' : 'Next / Далее';
+}
+
+function setTourVisible(visible: boolean): void {
+  tour.hidden = !visible;
+  if (visible) {
+    tourStep = 0;
+    renderTourStep();
+    tour.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+nextTourButton.addEventListener('click', () => {
+  if (tourStep < onboardingJourney.length - 1) {
+    tourStep += 1;
+    renderTourStep();
+    return;
+  }
+  dismissOnboarding(window.localStorage);
+  setTourVisible(false);
+});
+$<HTMLButtonElement>('#skip-tour').addEventListener('click', () => {
+  dismissOnboarding(window.localStorage);
+  setTourVisible(false);
+});
+$<HTMLButtonElement>('#reopen-tour').addEventListener('click', () => {
+  reopenOnboarding(window.localStorage);
+  setTourVisible(true);
+});
 source.addEventListener('keydown', (event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') build(); });
 source.addEventListener('input', () => {
   canonicalModel = undefined;
@@ -688,3 +743,4 @@ source.addEventListener('input', () => {
 });
 loadTimedModel(currentTimedModel);
 build();
+setTourVisible(!isOnboardingDismissed(window.localStorage));

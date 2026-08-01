@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0",
+  "id": "template-game-session",
+  "name": "GameSession",
+  "description": "Game and NPC session flow from menu through play, pause and victory.",
+  "modelKind": "mealy",
+  "semanticProfile": "deterministic.partial",
+  "inputAlphabet": { "symbols": [{ "id": "start" }, { "id": "pause" }, { "id": "resume" }, { "id": "win" }] },
+  "outputAlphabet": { "symbols": [{ "id": "playing" }, { "id": "paused" }, { "id": "victory" }] },
+  "states": [{ "id": "menu" }, { "id": "playing" }, { "id": "paused" }, { "id": "victory" }],
+  "transitions": [
+    { "id": "t1", "from": "menu", "to": "playing", "input": "start", "output": "playing" },
+    { "id": "t2", "from": "playing", "to": "paused", "input": "pause", "output": "paused" },
+    { "id": "t3", "from": "paused", "to": "playing", "input": "resume", "output": "playing" },
+    { "id": "t4", "from": "playing", "to": "victory", "input": "win", "output": "victory" }
+  ],
+  "initial": { "stateId": "menu" },
+  "provenance": { "createdBy": "Automata Studio", "createdByVersion": "1.1.0", "sourceFormat": "template", "timestamp": "2026-08-01T00:00:00Z" }
+}
