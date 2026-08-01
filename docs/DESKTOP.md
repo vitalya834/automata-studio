@@ -7,7 +7,8 @@ with the Node runner bundle, canonical examples and schemas.
 ## Downloads
 
 - `Automata-Studio-Setup-<version>-x64.exe` — assisted per-user NSIS installer
-  with Start menu and desktop shortcuts.
+  with branded wizard artwork, Start menu and desktop shortcuts carrying the
+  Automata Studio application icon.
 - `Automata-Studio-Portable-<version>-x64.exe` — self-contained executable that
   does not install the application.
 
@@ -26,6 +27,9 @@ npm test
 npm run desktop:smoke
 npm run desktop:dist
 ```
+
+Run `npm run desktop:assets` to regenerate the 24-bit NSIS header and sidebar
+artwork from the tracked Windows drawing script.
 
 Artifacts are copied to `artifacts/`. The build script uses an ASCII-only
 temporary path so NSIS remains reliable when the repository path contains

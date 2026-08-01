@@ -21,6 +21,7 @@ New-Item -ItemType Directory -Path $artifactDirectory -Force | Out-Null
 try {
     Push-Location $projectRoot
     try {
+        Invoke-Checked 'npm' @('run', 'desktop:assets')
         Invoke-Checked 'npm' @('run', 'build:desktop:web')
         Invoke-Checked 'npm' @('run', 'cli:build')
         $builderArguments = @('electron-builder')
