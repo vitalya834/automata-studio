@@ -5,6 +5,7 @@
 [![CI](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml)
 [![Browser demo](https://img.shields.io/badge/live-browser_demo-50d1c5)](https://vitalya834.github.io/automata-studio/)
 [![Version](https://img.shields.io/badge/version-1.0.0-8b9cff)](https://github.com/vitalya834/automata-studio/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-f4c95d)](LICENSE)
 
 **Generate behavioral models, synthesize test campaigns, run them against real
 software or devices, and collect evidence.**
