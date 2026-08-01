@@ -3,17 +3,34 @@ import { resolve } from 'node:path';
 import { CliProcessAdapter } from './adapters/cli-process';
 import { ModbusTcpAdapter, type ModbusTcpAdapterOptions } from './adapters/modbus-tcp';
 import { HttpAdapter, type HttpAdapterOptions } from './adapters/http';
-import { parseTestPlan, runTestPlan, type TestRunResult } from './testing';
+import {
+  parseTestPlan,
+  runTestPlan,
+  serializeTestPlan,
+  transitionCoverToTestPlan,
+  type TestRunResult,
+} from './testing';
 import { parseRunnerCliArgs, RunnerCliUsageError } from './runner-cli-options';
 import { testRunToHtml, testRunToJUnit } from './reports';
+import { generateTransitionCover, parseMachine, type Machine } from './fsm';
+import { randomWalkToTestPlan } from './campaign';
 
-const HELP = `Automata Studio test runner v0.9
+const HELP = `Automata Studio test runner v1.0
 
 Usage:
+  automata generate <model.fsm> --output <plan.json> [options]
   automata validate <plan.json> [--format text|json]
   automata run <plan.json> --adapter cli --executable <path> [options]
   automata run <plan.json> --adapter modbus --config <adapter.json> [options]
   automata run <plan.json> --adapter http --config <adapter.json> [options]
+
+Generator options:
+  --strategy transition-cover|random-walk   Generation algorithm
+  --cases <count>               Random-walk case count (default: 25)
+  --max-steps <count>           Maximum steps per random walk (default: 20)
+  --timeout <ms>                Per-step deadline (default: 1000)
+  --seed <value>                Reproducible random seed (default: 2026)
+  --output <file>               Destination Test Plan IR JSON
 
 CLI adapter options:
   --arg <value>                 Repeat for every executable argument
@@ -41,6 +58,7 @@ HTTP adapter options:
   --format text|json            Console output format (default: text)
 
 Examples:
+  npm run cli -- generate examples/game-session.fsm --output game-plan.json
   npm run cli -- validate examples/test-plans/turnstile-transition-cover.json
   npm run demo:cli
 
@@ -86,6 +104,26 @@ async function readPlan(planPath: string) {
   return parsed.value;
 }
 
+async function readDslMachine(modelPath: string): Promise<Machine> {
+  const absolute = resolve(modelPath);
+  let source: string;
+  try { source = await readFile(absolute, 'utf8'); } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new RunnerCliUsageError(`Cannot read model ${JSON.stringify(absolute)}: ${message}`);
+  }
+  const parsed = parseMachine(source);
+  const errors = parsed.diagnostics.filter((diagnostic) => diagnostic.severity === 'error');
+  if (parsed.machine === undefined || errors.length > 0) {
+    throw new RunnerCliUsageError(`Invalid FSM model in ${JSON.stringify(absolute)}:\n${errors
+      .map((diagnostic) => `  line ${diagnostic.line}: ${diagnostic.message}`).join('\n')}`);
+  }
+  return parsed.machine;
+}
+
+function planSlug(value: string): string {
+  return value.trim().toLowerCase().replace(/[^\p{L}\p{N}_.-]+/gu, '-').replace(/^[.-]+|[.-]+$/g, '') || 'campaign';
+}
+
 async function readModbusConfig(configPath: string): Promise<ModbusTcpAdapterOptions> {
   const absolute = resolve(configPath);
   let value: unknown;
@@ -125,6 +163,24 @@ async function main(): Promise<number> {
   const command = parseRunnerCliArgs(process.argv.slice(2));
   if (command.kind === 'help') {
     process.stdout.write(HELP);
+    return 0;
+  }
+
+  if (command.kind === 'generate') {
+    const machine = await readDslMachine(command.modelPath);
+    const id = `${planSlug(machine.name)}-${command.strategy}`;
+    const plan = command.strategy === 'transition-cover'
+      ? transitionCoverToTestPlan(generateTransitionCover(machine), {
+          id, name: `${machine.name} transition cover`, modelId: machine.name, timeoutMs: command.timeoutMs,
+          metadata: { sourceModel: command.modelPath },
+        })
+      : randomWalkToTestPlan(machine, {
+          id, name: `${machine.name} random-walk campaign`, modelId: machine.name,
+          cases: command.cases, maxSteps: command.maxSteps, timeoutMs: command.timeoutMs, seed: command.seed,
+          metadata: { sourceModel: command.modelPath },
+        });
+    await writeFile(resolve(command.outputPath), `${serializeTestPlan(plan)}\n`, 'utf8');
+    process.stdout.write(`GENERATED  ${command.strategy}  cases=${plan.cases.length}  output=${resolve(command.outputPath)}\n`);
     return 0;
   }
 

@@ -11,6 +11,17 @@ describe('runner CLI options', () => {
       .toEqual({ kind: 'validate', planPath: 'plan.json', format: 'json' });
   });
 
+  it('parses reproducible random-walk generation', () => {
+    expect(parseRunnerCliArgs([
+      'generate', 'game.fsm', '--strategy', 'random-walk', '--output', 'game-plan.json',
+      '--cases', '40', '--max-steps', '30', '--timeout', '750', '--seed', 'game-2026',
+    ])).toEqual({
+      kind: 'generate', modelPath: 'game.fsm', strategy: 'random-walk', outputPath: 'game-plan.json',
+      cases: 40, maxSteps: 30, timeoutMs: 750, seed: 'game-2026',
+    });
+    expect(() => parseRunnerCliArgs(['generate', 'game.fsm'])).toThrow('--output');
+  });
+
   it('parses a CLI process run without building a command string', () => {
     expect(parseRunnerCliArgs([
       'run', '--plan', 'plan.json', '--adapter', 'cli', '--executable', 'node',

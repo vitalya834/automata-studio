@@ -8,6 +8,7 @@
 | Архитектура продукта | [English](PRODUCT-ARCHITECTURE.md) | [Русский](PRODUCT-ARCHITECTURE.ru.md) |
 | Таксономия автоматов | [English](AUTOMATA-TAXONOMY.md) | [Русский](AUTOMATA-TAXONOMY.ru.md) |
 | Выполнение тестов | [English](TEST-EXECUTION.md) | [Русский](TEST-EXECUTION.ru.md) |
+| Генерация тестов | [English](TEST-GENERATION.md) | [Русский](TEST-GENERATION.ru.md) |
 | Временное тестирование | [English](TIMED-TESTING.md) | [Русский](TIMED-TESTING.ru.md) |
 | Адаптер CLI-процесса | [English](adapters/CLI-PROCESS.md) | [Русский](adapters/CLI-PROCESS.ru.md) |
 | Modbus TCP‑адаптер | [English](adapters/MODBUS-TCP.md) | [Русский](adapters/MODBUS-TCP.ru.md) |

@@ -38,6 +38,10 @@ function seededRandom(seed: number | string): () => number {
 export function generateSequenceDataset(machine: Machine, options: SequenceDatasetOptions): SequenceSample[] {
   positiveInteger(options.episodes, 'episodes');
   positiveInteger(options.maxSteps, 'maxSteps');
+  if (options.episodes > 100_000 || options.maxSteps > 10_000
+    || options.episodes * options.maxSteps > 1_000_000) {
+    throw new RangeError('A sequence dataset must not exceed 1000000 requested steps.');
+  }
   if (!analyzeMachine(machine).deterministic) throw new TypeError('Sequence dataset generation requires a deterministic machine.');
   if (!machine.states.some((state) => state.id === machine.initialState)) throw new TypeError('The initial state does not exist.');
 

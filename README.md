@@ -16,6 +16,18 @@ core. Modbus is one future adapter, not the product boundary: the same abstract
 test plan can target a simulator, CLI process, HTTP service, CAN device or other
 SUT through an adapter.
 
+## v1.0 product pipeline
+
+- one CLI now supports `generate`, `validate` and `run` workflows;
+- model DSL to versioned Test Plan IR generation with transition-cover or
+  seeded random-walk strategies;
+- random campaigns include deterministic oracle outputs, state traces,
+  transition metadata, case/step limits and per-step deadlines;
+- the HTTP game demo proves the complete model -> generated tests -> real SUT ->
+  JUnit/HTML evidence pipeline;
+- generated plans remain protocol-neutral and can be reused with CLI, Modbus or
+  HTTP adapters.
+
 ## v0.9 capabilities
 
 - HTTP/REST adapter for APIs, microservices, game servers and ML inference;
@@ -147,6 +159,8 @@ After `npm run cpp:build`:
 ## External SUT runner
 
 ```powershell
+npm run cli -- generate examples/game-session.fsm --strategy transition-cover --output game-plan.json
+npm run cli -- generate examples/game-session.fsm --strategy random-walk --cases 50 --max-steps 25 --seed 2026 --output game-fuzz.json
 npm run cli -- validate examples/test-plans/turnstile-transition-cover.json
 npm run demo:cli
 npm run demo:modbus
@@ -162,6 +176,7 @@ environment allowlisting, JSON output and report files.
 - [Product architecture](docs/PRODUCT-ARCHITECTURE.md)
 - [Automata taxonomy](docs/AUTOMATA-TAXONOMY.md)
 - [Test execution architecture](docs/TEST-EXECUTION.md)
+- [Transition-cover and random-walk generation](docs/TEST-GENERATION.md)
 - [Test Plan IR JSON Schema](schema/automata-test-plan-v1.schema.json)
 - [Model IR semantics](docs/model-ir/SEMANTICS.md)
 - [Model IR migrations](docs/model-ir/MIGRATIONS.md)

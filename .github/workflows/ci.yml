@@ -43,6 +43,11 @@ jobs:
       - name: Build external SUT runner
         run: npm run cli:build
 
+      - name: Generate and validate a random campaign
+        run: |
+          node dist-cli/runner-cli.js generate examples/game-session.fsm --strategy random-walk --cases 20 --max-steps 20 --seed ci-2026 --output $env:RUNNER_TEMP\game-random.json
+          node dist-cli/runner-cli.js validate $env:RUNNER_TEMP\game-random.json
+
       - name: Run CLI-process end-to-end demo
         run: npm run demo:cli
 

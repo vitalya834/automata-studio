@@ -1,7 +1,18 @@
 export type OutputFormat = 'text' | 'json';
+export type GenerateStrategy = 'transition-cover' | 'random-walk';
 
 export type RunnerCliCommand =
   | { kind: 'help' }
+  | {
+      kind: 'generate';
+      modelPath: string;
+      outputPath: string;
+      strategy: GenerateStrategy;
+      cases: number;
+      maxSteps: number;
+      timeoutMs: number;
+      seed: string;
+    }
   | { kind: 'validate'; planPath: string; format: OutputFormat }
   | {
       kind: 'run';
@@ -68,8 +79,42 @@ export function parseRunnerCliArgs(argv: string[]): RunnerCliCommand {
   }
 
   const kind = argv[0];
-  if (kind !== 'run' && kind !== 'validate') {
+  if (kind !== 'run' && kind !== 'validate' && kind !== 'generate') {
     throw new RunnerCliUsageError(`Unknown command ${JSON.stringify(kind)}.`);
+  }
+
+  if (kind === 'generate') {
+    let modelPath = argv[1]?.startsWith('--') === false ? argv[1] : undefined;
+    let outputPath: string | undefined;
+    let strategy: GenerateStrategy = 'transition-cover';
+    let cases = 25;
+    let maxSteps = 20;
+    let timeoutMs = 1_000;
+    let seed = '2026';
+    for (let index = modelPath === undefined ? 1 : 2; index < argv.length; index += 1) {
+      const flag = argv[index];
+      if (flag === '--help' || flag === '-h') return { kind: 'help' };
+      const value = valueAfter(argv, index, flag);
+      index += 1;
+      switch (flag) {
+        case '--model': modelPath = value; break;
+        case '--output': outputPath = value; break;
+        case '--strategy':
+          if (value !== 'transition-cover' && value !== 'random-walk') {
+            throw new RunnerCliUsageError('--strategy must be transition-cover or random-walk.');
+          }
+          strategy = value;
+          break;
+        case '--cases': cases = positiveInteger(value, flag); break;
+        case '--max-steps': maxSteps = positiveInteger(value, flag); break;
+        case '--timeout': timeoutMs = positiveInteger(value, flag); break;
+        case '--seed': seed = value; break;
+        default: throw new RunnerCliUsageError(`Unknown generate option ${JSON.stringify(flag)}.`);
+      }
+    }
+    if (modelPath === undefined) throw new RunnerCliUsageError('A model path or --model is required.');
+    if (outputPath === undefined) throw new RunnerCliUsageError('--output is required for generate.');
+    return { kind, modelPath, outputPath, strategy, cases, maxSteps, timeoutMs, seed };
   }
 
   let planPath: string | undefined = argv[1]?.startsWith('--') === false ? argv[1] : undefined;

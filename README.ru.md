@@ -15,6 +15,18 @@ Automata Studio — гибридная C++/TypeScript-платформа мод�
 ядром продукта. Один абстрактный тест-план можно выполнять на симуляторе,
 CLI-процессе, HTTP-сервисе, Modbus/CAN-устройстве или другом SUT через адаптер.
 
+## Продуктовый конвейер v1.0
+
+- единый CLI поддерживает команды `generate`, `validate` и `run`;
+- модель DSL преобразуется в версионированный Test Plan IR методами
+  transition-cover или воспроизводимого random-walk;
+- случайные кампании содержат эталонные выходы, трассы состояний, метаданные
+  переходов, лимиты случаев/шагов и дедлайны;
+- HTTP-демо доказывает полный цикл: модель → генерация тестов → реальный SUT →
+  JUnit/HTML-отчёты;
+- сгенерированный план не зависит от протокола и запускается через CLI, Modbus
+  или HTTP-адаптер.
+
 ## Возможности v0.9
 
 - HTTP/REST-адаптер для API, микросервисов, игровых серверов и ML inference;
@@ -121,6 +133,8 @@ npm run cpp:build
 ## Runner для внешнего SUT
 
 ```powershell
+npm run cli -- generate examples/game-session.fsm --strategy transition-cover --output game-plan.json
+npm run cli -- generate examples/game-session.fsm --strategy random-walk --cases 50 --max-steps 25 --seed 2026 --output game-fuzz.json
 npm run cli -- validate examples/test-plans/turnstile-transition-cover.json
 npm run demo:cli
 npm run demo:modbus
@@ -136,6 +150,7 @@ npm run demo:http
 - [Архитектура продукта](docs/PRODUCT-ARCHITECTURE.ru.md)
 - [Таксономия автоматов](docs/AUTOMATA-TAXONOMY.ru.md)
 - [Архитектура выполнения тестов](docs/TEST-EXECUTION.ru.md)
+- [Генерация transition-cover и random-walk тестов](docs/TEST-GENERATION.ru.md)
 - [Временное тестирование](docs/TIMED-TESTING.ru.md)
 - [Runner CLI для внешних SUT](docs/RUNNER-CLI.ru.md)
 - [Modbus TCP‑адаптер](docs/adapters/MODBUS-TCP.ru.md)
