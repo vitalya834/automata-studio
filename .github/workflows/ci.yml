@@ -40,6 +40,9 @@ jobs:
       - name: Build browser workbench
         run: npm run build
 
+      - name: Build browser demo for GitHub Pages
+        run: npm run build:pages
+
       - name: Build external SUT runner
         run: npm run cli:build
 

@@ -3,6 +3,17 @@
 [English](README.md) | [Русский](README.ru.md)
 
 [![CI](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/vitalya834/automata-studio/actions/workflows/ci.yml)
+[![Browser demo](https://img.shields.io/badge/live-browser_demo-50d1c5)](https://vitalya834.github.io/automata-studio/)
+[![Version](https://img.shields.io/badge/version-1.0.0-8b9cff)](https://github.com/vitalya834/automata-studio/releases)
+
+**Generate behavioral models, synthesize test campaigns, run them against real
+software or devices, and collect evidence.**
+
+[Open the browser workbench](https://vitalya834.github.io/automata-studio/) ·
+[Run the full HTTP demo](#five-minute-product-tour) ·
+[Read the Russian guide](README.ru.md)
+
+![Automata Studio v1.0 workbench](docs/screenshots/automata-studio-v1.png)
 
 Automata Studio is a hybrid C++/TypeScript model-based testing workbench. It
 generates finite-state models from reproducible constraints, imports the legacy
@@ -15,6 +26,30 @@ semantics, test oracles, reproducible execution and coverage evidence are the
 core. Modbus is one future adapter, not the product boundary: the same abstract
 test plan can target a simulator, CLI process, HTTP service, CAN device or other
 SUT through an adapter.
+
+## Five-minute product tour
+
+Requirements: Node.js 24 and npm.
+
+```powershell
+git clone https://github.com/vitalya834/automata-studio.git
+cd automata-studio
+npm install
+npm run demo:http
+```
+
+The demo reads a game FSM, generates transition-cover tests, starts an ephemeral
+HTTP game server, executes every generated path, and emits JUnit/HTML evidence.
+Nothing is installed as a system service and no external device is contacted.
+
+| Goal | Command or guide |
+| --- | --- |
+| Explore models and timed automata | [Open browser demo](https://vitalya834.github.io/automata-studio/) |
+| Test a command-line program | `npm run demo:cli` |
+| Test Modbus TCP behavior safely | `npm run demo:modbus` |
+| Generate random behavioral tests | [Test generation guide](docs/TEST-GENERATION.md) |
+| Test a REST or ML inference API | [HTTP adapter guide](docs/adapters/HTTP.md) |
+| Generate sequence-model data | [Dataset guide](docs/DATASET-GENERATION.md) |
 
 ## v1.0 product pipeline
 

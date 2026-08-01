@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:pages": "tsc && vite build --base /automata-studio/",
     "cli:build": "vite build --ssr src/runner-cli.ts --outDir dist-cli",
     "cli": "npm run cli:build --silent && node dist-cli/runner-cli.js",
     "dataset": "vite build --ssr src/dataset-cli.ts --outDir dist-cli --emptyOutDir false --logLevel warn && node dist-cli/dataset-cli.js",
